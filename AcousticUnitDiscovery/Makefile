@@ -1,7 +1,6 @@
 CC=g++
 CFLAGS=-Wall -O2
-INCLUDE=-I/people/hartmann/research/src/FileUtilities/
-INCLUDE=-I/Users/hartmanw/Documents/Research/src/FileUtilities/
+INCLUDE=-I../FileUtilities/
 
 all: TestDTW IdentifyWordAlignments CreateBestSegments FindSilenceExemplars \
 		IdentifySilenceLocations

@@ -1,6 +1,5 @@
 CC=g++
 CFLAGS=-Wall -O0
-#INCLUDE=-I/people/hartmann/research/src/FileUtilities/
 
 all: StringFunctions.o MatrixFunctions.o
 
