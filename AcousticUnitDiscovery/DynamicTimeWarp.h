@@ -161,8 +161,8 @@ class DynamicTimeWarp
   // From the given dp_matrix, storing the best path to any given point from
   // the starting point, the best path to the endpoint is found.  The path is 
   // automatically added to paths_.
-  bool AddBestPath( const std::vector< std::vector<double > > &dp_matrix,                       
-      const std::vector< std::vector<TrackBackDirection> > &backtrack_matrix,     
+  bool AddBestPath( const std::vector< std::vector<double > > &dp_matrix, 
+      const std::vector< std::vector<TrackBackDirection> > &backtrack_matrix,
       const PathPoint &endpoint);
 
   // Length Constrained Minimum Average (LMCA) susbsequence finds the best 
