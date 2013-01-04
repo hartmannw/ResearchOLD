@@ -3,7 +3,7 @@ CFLAGS=-Wall -O2
 INCLUDE=-I../FileUtilities/
 
 all: TestDTW IdentifyWordAlignments CreateBestSegments FindSilenceExemplars \
-		IdentifySilenceLocations
+		IdentifySilenceLocations TestMultiBest
 
 FindSilenceExemplars: DynamicTimeWarp.o FindSilenceExemplars.cc
 	$(CC) $(CFLAGS) $(INCLUDE) -o FindSilenceExemplars DynamicTimeWarp.o \
@@ -29,9 +29,17 @@ TestDTW: DynamicTimeWarp.o
 	$(CC) $(CFLAGS) $(INCLUDE) -o testdtw DynamicTimeWarp.o testdtw.cc \
 		../FileUtilities/SpeechFeatures.o ../FileUtilities/ImageIO.o
 
+TestMultiBest: MultiBestPath.o
+	$(CC) $(CFLAGS) $(INCLUDE) -o testmulti MultiBestPath.o testmultibest.cc \
+  	../FileUtilities/SpeechFeatures.o 
+
 DynamicTimeWarp.o: DynamicTimeWarp.cc DynamicTimeWarp.h
 	$(CC) $(CFLAGS) $(INCLUDE) -c DynamicTimeWarp.cc \
 	  ../FileUtilities/ImageIO.o
 
+MultiBestPath.o: MultiBestPath.cc MultiBestPath.h
+	$(CC) $(CFLAGS) $(INCLUDE) -c MultiBestPath.cc
+
 clean:
-	rm *.o testdtw IdentifyWordAlignments CreateBestSegments FindSilenceExemplars
+	rm *.o testdtw IdentifyWordAlignments CreateBestSegments FindSilenceExemplars\
+    testmulti

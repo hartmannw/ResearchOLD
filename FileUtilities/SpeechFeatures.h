@@ -3,7 +3,7 @@
 #ifndef FILEUTILITIES_SPEECHFEATURES_H_
 #define FILEUTILITIES_SPEECHFEATURES_H_
 
-//#include<iostream> //just for testing purposes, REMOVE LATER
+#include<iostream> //just for testing purposes, REMOVE LATER
 #include<vector>
 #include<string>
 #include<fstream>
