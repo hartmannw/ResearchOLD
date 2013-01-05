@@ -3,13 +3,7 @@ CFLAGS=-Wall -O0
 INCLUDE=-I../Utilities/ \
     -I../FileUtilities/
 
-all: Test GaussianPosteriorgram AveragePosteriorgram
-
-Test: DiagonalGaussian.o MixtureOfDiagonalGaussians.o HmmSet.o SpectralCluster.o
-	$(CC) $(CFLAGS) $(INCLUDE) -o test DiagonalGaussian.o \
-    MixtureOfDiagonalGaussians.o HmmSet.o ../Utilities/StringFunctions.o \
-    ../FileUtilities/ImageIO.o ../Utilities/MatrixFunctions.o \
-    SpectralCluster.o test.cc
+all: GaussianPosteriorgram AveragePosteriorgram
 
 GaussianPosteriorgram: HmmSet.o MixtureOfDiagonalGaussians.o GaussianPosteriorgram.cc
 	$(CC) $(CFLAGS) $(INCLUDE) -o GaussianPosteriorgram \
@@ -38,8 +32,5 @@ HiddenMarkovModel.o: HiddenMarkovModel.cc HiddenMarkovModel.h
 HmmSet.o: HmmSet.cc HmmSet.h HiddenMarkovModel.o MixtureOfDiagonalGaussians.o 
 	$(CC) $(CFLAGS) $(INCLUDE) -c HmmSet.cc
 
-SpectralCluster.o: SpectralCluster.cc SpectralCluster.h
-	$(CC) $(CFLAGS) $(INCLUDE) -c SpectralCluster.cc
-
 clean:
-	rm *.o test
+	rm *.o GaussianPosteriorgram AveragePosteriorgram
