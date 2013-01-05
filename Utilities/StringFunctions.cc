@@ -37,4 +37,4 @@ bool TokenizeString(std::string line, char delimiter,
   return true;
 }
 
-}
+} // end namespace utilities

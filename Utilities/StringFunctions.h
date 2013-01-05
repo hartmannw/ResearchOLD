@@ -45,5 +45,5 @@ std::string TrimString(const std::string& s,
 bool TokenizeString(std::string line, char delimiter, 
     std::vector<std::string> &tokens);
 
-}
+} // end namespace utilities
 #endif
