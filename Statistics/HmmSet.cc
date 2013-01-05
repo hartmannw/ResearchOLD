@@ -1,3 +1,6 @@
+// William Hartmann (hartmannw@gmail.com)
+// This is free and unencumbered software released into the public domain.
+// See the UNLICENSE file for more information.
 #include "HmmSet.h"
 
 namespace statistics
@@ -9,9 +12,9 @@ void HmmSet::LoadHtkHmmSet(std::string filename)
   std::string line;
   std::cout<<filename<<std::endl;
 
-  while(FindHtkModelHeader(fin, line))
+  while(FindHtkModelHeader(fin, line)) // For each HMM in the file.
   {
-    std::cout<<line<<std::endl;
+    // Read in each state within the HMM.
     if(line.substr(0,4) == std::string("~s \""))
     {
       std::string name = line.substr(4, line.length()-5);
@@ -27,6 +30,8 @@ void HmmSet::LoadHtkHmmSet(std::string filename)
   fin.close();
 }
 
+// Looks for either ~h or ~s which marks the beginning of either an HMM or state
+// definition.
 bool HmmSet::FindHtkModelHeader(std::ifstream &fin, std::string &line)
 {
   while( fin.good() )
@@ -55,6 +60,7 @@ unsigned int HmmSet::LoadSingleHtkState(std::ifstream &fin, std::string &line,
   }
   else
   {
+    // Check if it is a mixture of single Gaussian
     if(line.find( std::string("<NUMMIXES>") ) == 0)
     {
       std::vector<std::string> tokens;
@@ -85,6 +91,7 @@ unsigned int HmmSet::LoadSingleHtkState(std::ifstream &fin, std::string &line,
   return next_index;
 }
 
+// Assumes we have an HMM (~h) definition.
 bool HmmSet::LoadSingleHtkHmm(std::ifstream &fin, std::string &line)
 {
   // Assume we begin by looking at the ~h line
@@ -152,4 +159,4 @@ std::vector<std::vector<std::string> > HmmSet::mixture_names()
   return ret;
 }
 
-}
+} // end namespace statistics
