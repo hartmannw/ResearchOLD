@@ -1,3 +1,7 @@
+// William Hartmann (hartmannw@gmail.com)
+// This is free and unencumbered software released into the public domain.
+// See the UNLICENSE file for more information.
+
 #include "MixtureOfDiagonalGaussians.h"
 
 namespace statistics
@@ -23,8 +27,16 @@ double MixtureOfDiagonalGaussians::LogLikelihood(std::vector<double> &point)
   return log(Likelihood(point));
 }
 
+// Implementation matches the results on the testset provided in the orginal
+// author's paper, however, this implementation does not exactly match my
+// reading of the paper. The author does have a Matlab implementation and this
+// implementation matches that. I tried to contact the author to resolve the
+// discrepency, but was unsuccessful. Since this matches the author's
+// implementation and evaluates their testset correctly, I am willing to trust
+// this implementation is the correct one.
 double MixtureOfDiagonalGaussians::CSDivergence(MixtureOfDiagonalGaussians mog)
 {
+  // Divergence measure is split into three terms.
   double first_term = 0, second_term = 0, third_term = 0;
   //First and second terms
   double inner_term = 0;
@@ -37,10 +49,6 @@ double MixtureOfDiagonalGaussians::CSDivergence(MixtureOfDiagonalGaussians mog)
       first_term += (weight_[i] * mog.weight(j) * 
           g.Likelihood(gaussian_[i].mean()) );
     }
-    //std::cout<<gaussian_[i].dimension()<<" "<<gaussian_[i].dimension() / 2.0<<std::endl;
-    /*second_term += ( std::pow(weight_[i],2)  * 
-        std::sqrt(1 / gaussian_[i].determinant()) ) /
-        std::pow(2*pi, gaussian_[i].dimension() / 2.0);*/
     for(unsigned int k = 0; k < components(); ++k)
     {
       DiagonalGaussian g = gaussian_[k];
@@ -55,14 +63,10 @@ double MixtureOfDiagonalGaussians::CSDivergence(MixtureOfDiagonalGaussians mog)
   inner_term = 0;
   for(unsigned int j = 0; j < mog.components(); ++j)
   {
-    /*third_term += ( std::pow(mog.weight(j),2) * 
-        std::sqrt(1 / mog.gaussian(j).determinant()) ) /
-        std::pow(2*pi, mog.gaussian(j).dimension() / 2.0);*/
     for(unsigned int k = 0; k < mog.components(); ++k)
     {
       DiagonalGaussian g = mog.gaussian(j);
       g.AddVariance(mog.gaussian(k).variance());
-      //std::cout<<g.mean(0)<<" "<<g.mean(1)<<" "<<g.variance(0)<<" "<<g.variance(1)<<std::endl;
       inner_term += (mog.weight(j) * mog.weight(k) *
           g.Likelihood(mog.gaussian(k).mean()));
     }
@@ -72,7 +76,6 @@ double MixtureOfDiagonalGaussians::CSDivergence(MixtureOfDiagonalGaussians mog)
   first_term =  -std::log(first_term);
   second_term = 0.5 * std::log(second_term);
   third_term = 0.5 * std::log(third_term);
-//  return second_term;
   return (first_term + second_term + third_term);
 }
 
