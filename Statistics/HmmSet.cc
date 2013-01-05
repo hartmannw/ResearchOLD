@@ -60,14 +60,14 @@ unsigned int HmmSet::LoadSingleHtkState(std::ifstream &fin, std::string &line,
       std::vector<std::string> tokens;
       line = utilities::TrimString(line);
       utilities::TokenizeString(line, ' ', tokens);
-      unsigned int num_mixes = utilities::stoi(tokens[1]);
+      unsigned int num_mixes = utilities::ToNumber<unsigned int>(tokens[1]);
       getline(fin, line);
       for(unsigned int i = 0; i < num_mixes; ++i)
       {
         tokens.clear();
         line = utilities::TrimString(line);
         utilities::TokenizeString(line, ' ', tokens);
-        double mixture_weight = utilities::stof(tokens[2]);
+        double mixture_weight = utilities::ToNumber<float>(tokens[2]);
         getline(fin, line);
         mog.AddGaussian(LoadSingleHtkGaussian(fin, line), mixture_weight);
       }
@@ -97,13 +97,13 @@ bool HmmSet::LoadSingleHtkHmm(std::ifstream &fin, std::string &line)
   std::vector<std::string> tokens;
   line = utilities::TrimString(line);
   utilities::TokenizeString(line, ' ', tokens);
-  unsigned int state_count = utilities::stof(tokens[1]) - 2;
+  unsigned int state_count = utilities::ToNumber<unsigned int>(tokens[1]) - 2;
   getline(fin, line); // STATE
   for(unsigned int i = 0; i < state_count; ++i)
   {
     if( line.find("<STATE>") > line.length())
       return false;
-    std::string state_name = name + std::string("_") + utilities::ntos(i);
+    std::string state_name = name + std::string("_") + utilities::ToString(i);
     std::cout<<state_name<<std::endl;
     getline(fin, line);
     hmm.AddState( LoadSingleHtkState(fin, line, state_name));
@@ -126,14 +126,14 @@ DiagonalGaussian HmmSet::LoadSingleHtkGaussian(std::ifstream &fin,
   utilities::TokenizeString(line, ' ', tokens);
   std::vector<double> mean, variance;
   for(unsigned int i =0; i < tokens.size(); ++i)
-    mean.push_back(utilities::stof(tokens[i]));
+    mean.push_back(utilities::ToNumber<double>(tokens[i]));
   getline(fin, line);
   getline(fin, line);
   line = utilities::TrimString(line);
   tokens.clear();
   utilities::TokenizeString(line, ' ', tokens);
   for(unsigned int i = 0; i < tokens.size(); ++i)
-    variance.push_back(utilities::stof(tokens[i]));
+    variance.push_back(utilities::ToNumber<double>(tokens[i]));
   g.Initialize(mean, variance);
   getline(fin, line); // Skip GCONST line
   getline(fin, line);

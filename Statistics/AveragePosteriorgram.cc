@@ -202,8 +202,8 @@ std::vector<WordLocation> FindWordLocations(std::string filename,
       utilities::TokenizeString(line, ' ', tokens);
       if(tokens.size() > 2 && tokens[2] == word)
       {
-        int start = std::floor(utilities::stoi(tokens[0]) / 100000);
-        int end = std::floor(utilities::stoi(tokens[1]) / 100000) - 1;
+        int start = std::floor(utilities::ToNumber<int>(tokens[0]) / 100000);
+        int end = std::floor(utilities::ToNumber<int>(tokens[1]) / 100000) - 1;
         WordLocation wl = {name, start, end};
         ret.push_back(wl);
       }
