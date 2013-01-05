@@ -1,3 +1,7 @@
+// William Hartmann (hartmannw@gmail.com)
+// This is free and unencumbered software released into the public domain.
+// See the UNLICENSE file for more information.
+
 #include "DiagonalGaussian.h"
 
 namespace statistics
@@ -13,7 +17,7 @@ void DiagonalGaussian::Initialize(std::vector<double> mean,
 
 void DiagonalGaussian::CalculateConstant()
 {
-  double pi = 4.0 * atan(1.0);
+  double pi = 4.0 * atan(1.0); // Standard method of calculating pi.
   constant_ = 1;
   for(unsigned int i =0; i < variance_.size(); ++i)
     constant_ *= variance_[i];
@@ -68,6 +72,7 @@ double DiagonalGaussian::SymmetricKLDivergence(DiagonalGaussian g)
   return KLDivergence(g) + g.KLDivergence(*this);
 }
 
+// Determinant of a diagonal matrix is the product of the diagaonal elements.
 double DiagonalGaussian::determinant()
 {
   double ret = 1;
