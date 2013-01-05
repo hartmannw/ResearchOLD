@@ -4,7 +4,6 @@
 #include "SpectralCluster.h"
 #include "ImageIO.h"
 #include "MatrixFunctions.h"
-#include "KMeans.h"
 #include <iostream>
 #include <vector>
 #include <string>

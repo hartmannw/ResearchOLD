@@ -1,15 +1,15 @@
 CC=g++
 CFLAGS=-Wall -O0
-INCLUDE=-I/people/hartmann/research/src/Utilities/ \
-    -I/people/hartmann/research/src/FileUtilities/
+INCLUDE=-I../Utilities/ \
+    -I../FileUtilities/
 
 all: Test GaussianPosteriorgram AveragePosteriorgram
 
-Test: DiagonalGaussian.o MixtureOfDiagonalGaussians.o HmmSet.o SpectralCluster.o KMeans.o
+Test: DiagonalGaussian.o MixtureOfDiagonalGaussians.o HmmSet.o SpectralCluster.o
 	$(CC) $(CFLAGS) $(INCLUDE) -o test DiagonalGaussian.o \
     MixtureOfDiagonalGaussians.o HmmSet.o ../Utilities/StringFunctions.o \
     ../FileUtilities/ImageIO.o ../Utilities/MatrixFunctions.o \
-    SpectralCluster.o KMeans.o test.cc
+    SpectralCluster.o test.cc
 
 GaussianPosteriorgram: HmmSet.o MixtureOfDiagonalGaussians.o GaussianPosteriorgram.cc
 	$(CC) $(CFLAGS) $(INCLUDE) -o GaussianPosteriorgram \
@@ -40,9 +40,6 @@ HmmSet.o: HmmSet.cc HmmSet.h HiddenMarkovModel.o MixtureOfDiagonalGaussians.o
 
 SpectralCluster.o: SpectralCluster.cc SpectralCluster.h
 	$(CC) $(CFLAGS) $(INCLUDE) -c SpectralCluster.cc
-
-KMeans.o: KMeans.cc KMeans.h
-	$(CC) $(CFLAGS) $(INCLUDE) -c KMeans.cc
 
 clean:
 	rm *.o test
