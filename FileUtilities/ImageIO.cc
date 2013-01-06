@@ -48,7 +48,7 @@ bool WritePlainPGM(const std::vector< std::vector<double> > &image,
 bool WriteBinaryPGM(const std::vector< std::vector<double> > &image,
     const std::string &filename)
 {
-  unsigned int  max = 255; // Standard binary PGM uses 8 bits per pixel.
+  unsigned int max = 255; // Standard binary PGM uses 8 bits per pixel.
   double rangemax= std::numeric_limits<double>::min();
   double rangemin= std::numeric_limits<double>::max(), range=0;
   unsigned char value;

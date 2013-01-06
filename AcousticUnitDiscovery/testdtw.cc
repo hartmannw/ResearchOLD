@@ -25,24 +25,23 @@ int main()
   std::string fname1, fname2, fname_sil;
   //acousticunitdiscovery::DynamicTimeWarp dtw;
 
-  fname1 = "utt1.cep.mvn";
-  fname2 = "utt2.cep.mvn";
+  fname1 = "example1.pgram";
+  //fname1 = "../FileUtilities/example.htk";
+  fname2 = "example2.pgram";
   //fname_sil = "../../babel/features/BP_101/scripted/training/silence/BABEL_BP_101_11422_20111019_143344_D2_scripted.sil";
   std::vector<bool> silence;                                                
   //silence = ReadSilence(fname_sil); 
 
+  sf1.ReadHtkFile(fname1);
+  sf2.ReadHtkFile(fname2);
 
-  sf1.ReadCepFile(fname1);
-  sf2.ReadCepFile(fname2);
-  std::cout<<sf1.num_records()<<std::endl;
-  std::cout<<"Poop"<<std::endl;
+  //utilities::PrintMatrix(sf1.record(0), std::string("%0.2f"));
 for(int i = 0; i < 1; i++)
 {
   std::cout<<"Iteration "<<i<<"\n";
   acousticunitdiscovery::DynamicTimeWarp dtw;
   utilities::Matrix<double> r1, r2;
-  std::cout<<r1.Initialize(sf1.record(0))<<std::endl;
-  std::cout<<"first record set"<<std::endl;
+  r1.Initialize(sf1.record(0));
   r2.Initialize(sf2.record(0));
   dtw.set_utterance_one(r1);
   dtw.set_utterance_two(r2);
@@ -50,10 +49,10 @@ for(int i = 0; i < 1; i++)
 
   dtw.ComputeSimilarityMatrix();
   //dtw.ComputeStandardDTW();
-  //dtw.ComputeSegmentalDTW(20);
+  dtw.ComputeSegmentalDTW(20);
   //dtw.SaveResultAsPGM( std::string("result.pgm"));
   //dtw.IncreaseSilenceCost(silence);
-  //dtw.PrunePathsByLCMA(50, 0.1);
+  dtw.PrunePathsByLCMA(50, 0.1);
   dtw.SaveResultAsPGM( std::string("result_pruned.pgm"));
 }
   return 0;

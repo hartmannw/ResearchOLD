@@ -30,7 +30,7 @@ bool SpeechFeatures::ReadCepFile( std::string filename )
     {
       features_[r][f].resize(feature_width_);
       fin.read(reinterpret_cast<char*> (vector),                                
-          sizeof(vector) * feature_width_);
+          sizeof(float) * feature_width_);
       for(int c = 0; c < feature_width_; ++c)
       {
         features_[r][f][c] = static_cast<double>(vector[c]);
@@ -59,6 +59,10 @@ bool SpeechFeatures::ReadHtkFile( std::string filename )
   EndianSwap(&header.sample_size);
   EndianSwap(&header.sample_period);
   EndianSwap(&header.parameter_kind);
+  //std::cout<<header.number_of_samples<<std::endl;
+  //std::cout<<header.sample_size<<std::endl;
+  //std::cout<<header.sample_period<<std::endl;
+  //std::cout<<header.parameter_kind<<std::endl;
   feature_width_ = header.sample_size / 4; //we are assuming each individual 
                                            //feature is a 4 byte float
   features_.resize(1); //htk files only store one record at a time.
@@ -68,7 +72,7 @@ bool SpeechFeatures::ReadHtkFile( std::string filename )
   for(int f = 0; f < header.number_of_samples; ++f)
   {
     features_[0][f].resize(feature_width_);
-    fin.read(reinterpret_cast<char*> (vector), sizeof(vector)*feature_width_);
+    fin.read(reinterpret_cast<char*> (vector), sizeof(float)*feature_width_);
     for(int c = 0; c < feature_width_; ++c)
     {
       EndianSwap(&vector[c]);

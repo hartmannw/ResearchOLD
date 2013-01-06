@@ -185,8 +185,8 @@ double DynamicTimeWarp::GetFeatureDistance(const std::vector<double> &one,
     distance += pow(one[i] - two[i], 2);
   distance = sqrt(distance);
   return distance;
-}
-*/
+}*/
+
 
 double DynamicTimeWarp::GetFeatureDistance(const std::vector<double> &one,
     const std::vector<double> &two)
