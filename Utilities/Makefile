@@ -1,7 +1,10 @@
 CC=g++
 CFLAGS=-Wall -O0
 
-all: StringFunctions.o MatrixFunctions.o
+all: TestMatrix Matrix.o StringFunctions.o MatrixFunctions.o
+
+Matrix.o: Matrix.h Matrix.cc
+	$(CC) $(CFLAGS) $(INCLUDE) -c Matrix.cc
 
 StringFunctions.o: StringFunctions.cc StringFunctions.h
 	$(CC) $(CFLAGS) $(INCLUDE) -c StringFunctions.cc
@@ -9,5 +12,8 @@ StringFunctions.o: StringFunctions.cc StringFunctions.h
 MatrixFunctions.o: MatrixFunctions.cc MatrixFunctions.h
 	$(CC) $(CFLAGS) $(INCLUDE) -c MatrixFunctions.cc
 
+TestMatrix: testmatrix.cc Matrix.o
+	$(CC) $(CFLAGS) $(INCLUDE) -o testmatrix testmatrix.cc Matrix.o
+
 clean:
-	rm *.o
+	rm *.o testmatrix
