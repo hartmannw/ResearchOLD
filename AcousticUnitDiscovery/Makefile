@@ -5,7 +5,7 @@ INCLUDE=-I../FileUtilities/ \
 
 all: TestDTW TestMultiBest
 
-TestDTW: DynamicTimeWarp.o
+TestDTW: DynamicTimeWarp.o testdtw.cc
 	$(CC) $(CFLAGS) $(INCLUDE) -o testdtw DynamicTimeWarp.o testdtw.cc \
 		../FileUtilities/SpeechFeatures.o ../FileUtilities/ImageIO.o
 

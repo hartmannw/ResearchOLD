@@ -15,6 +15,7 @@
 #ifndef ACOUSTICUNITDISCOVERY_DYNAMICTIMEWARP_H_
 #define ACOUSTICUNITDISCOVERY_DYNAMICTIMEWARP_H_
 
+#include<iostream>
 #include<vector>
 #include<cmath>
 #include<limits>

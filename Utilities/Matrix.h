@@ -5,6 +5,7 @@
 #ifndef UTILITIES_MATRIX_H_
 #define UTILITIES_MATRIX_H_
 
+#include<iostream>
 #include<vector>
 
 namespace utilities
@@ -89,6 +90,7 @@ bool Matrix<T>::Initialize(const std::vector<std::vector<T> > &matrix)
     return Initialize(0, 0);
   cols_ = matrix[0].size();
   matrix_.resize(rows_ * cols_);
+  std::cout<<rows_<<" "<<cols_<<std::endl;
   for(unsigned int r = 0; r < rows_; ++r)
   {
     if(matrix[r].size() != cols_) // Each row of the matrix does not have the
@@ -97,7 +99,10 @@ bool Matrix<T>::Initialize(const std::vector<std::vector<T> > &matrix)
       return false;
     }
     for(unsigned int c = 0; c < cols_; ++c)
-      matrix_[ (rows_ * r) + c ] = matrix[r][c];
+    {
+      //std::cout<<r<<" "<<c<<std::endl;
+      matrix_[ (cols_ * r) + c ] = matrix[r][c];
+    }
   }
   return true;
 }
@@ -105,13 +110,13 @@ bool Matrix<T>::Initialize(const std::vector<std::vector<T> > &matrix)
 template<class T>
 T Matrix<T>::operator() (unsigned int row, unsigned int col) const
 {
-  return matrix_[ (row * rows_) + col ];
+  return matrix_[ (row * cols_) + col ];
 }
 
 template<class T>
 T& Matrix<T>::operator() (unsigned int row, unsigned int col)
 {
-  return matrix_[ (row * rows_) + col ];
+  return matrix_[ (row * cols_) + col ];
 }
 
 template<class T>
@@ -122,7 +127,7 @@ std::vector<T> Matrix<T>::GetRow(unsigned int row) const
     return ret;
   ret.resize(cols_);
   for(unsigned int c = 0; c < cols_; ++c)
-    ret[c] = matrix_[ (row * rows_) + c ];
+    ret[c] = matrix_[ (row * cols_) + c ];
   return ret;
 }
 
@@ -134,7 +139,7 @@ std::vector<T> Matrix<T>::GetCol(unsigned int col) const
     return ret;
   ret.resize(rows_);
   for(unsigned int r = 0; r < cols_; ++r)
-    ret[r] = matrix_[ (r * rows_) + col ];
+    ret[r] = matrix_[ (r * cols_) + col ];
   return ret;
 }
 
@@ -147,7 +152,7 @@ std::vector<std::vector<T> > Matrix<T>::GetVectorOfVectors() const
   {
     ret[r].resize(cols_);
     for(unsigned int c = 0; c < cols_; ++c)
-      ret[r][c] = matrix_[ (r * rows_) + c];
+      ret[r][c] = matrix_[ (r * cols_) + c];
   }
   return ret;
 }
@@ -160,7 +165,7 @@ bool Matrix<T>::SetRow(unsigned int row, const std::vector<T> &values)
   if(values.size() != cols_) // Vector does not match number of cols
     return false;
   for(unsigned int c = 0; c < cols_; ++c)
-    matrix_[ (row * rows_) + c ] = values[c];
+    matrix_[ (row * cols_) + c ] = values[c];
   return true;
 }
 
@@ -170,7 +175,7 @@ bool Matrix<T>::SetRow(unsigned int row, T value)
   if(row > rows_) // This row does not exist
     return false;
   for(unsigned int c = 0; c < cols_; ++c)
-    matrix_[ (row * rows_) + c ] = value;
+    matrix_[ (row * cols_) + c ] = value;
   return true;
 }
 
@@ -182,7 +187,7 @@ bool Matrix<T>::SetCol(unsigned int col, const std::vector<T> &values)
   if(values.size() != rows_) // Vector does not match number of rows
     return false;
   for(unsigned int r = 0; r < rows_; ++r)
-    matrix_[ (r * rows_) + col ] = values[r];
+    matrix_[ (r * cols_) + col ] = values[r];
   return true;
 }
 
@@ -192,7 +197,7 @@ bool Matrix<T>::SetCol(unsigned int col, T value)
   if(col > cols_) // This row does not exist
     return false;
   for(unsigned int r = 0; r < rows_; ++r)
-    matrix_[ (r * rows_) + col ] = value;
+    matrix_[ (r * cols_) + col ] = value;
   return true;
 }
 
@@ -204,7 +209,7 @@ bool Matrix<T>::SetDiagonal(const std::vector<T> &values)
   if(values.size() != rows_) // Vector length does not match diagonal size.
     return false;
   for(unsigned int i = 0; i < rows_; ++i)
-    matrix_[ (i * rows_) + i] = values[i];
+    matrix_[ (i * cols_) + i] = values[i];
   return true;
 }
 
@@ -214,7 +219,7 @@ bool Matrix<T>::SetDiagonal(T value)
   if( ! isSquare() ) // Cannot set the diagonal of a nonsquare matrix.
     return false;
   for(unsigned int i = 0; i < rows_; ++i)
-    matrix_[ (i * rows_) + i] = value;
+    matrix_[ (i * cols_) + i] = value;
   return true;
 }
 

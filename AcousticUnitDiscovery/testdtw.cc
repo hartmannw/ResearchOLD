@@ -32,23 +32,28 @@ int main()
   //silence = ReadSilence(fname_sil); 
 
 
-  sf1.ReadHtkFile(fname1);
-  sf2.ReadHtkFile(fname2);
-
+  sf1.ReadCepFile(fname1);
+  sf2.ReadCepFile(fname2);
+  std::cout<<sf1.num_records()<<std::endl;
+  std::cout<<"Poop"<<std::endl;
 for(int i = 0; i < 1; i++)
 {
   std::cout<<"Iteration "<<i<<"\n";
   acousticunitdiscovery::DynamicTimeWarp dtw;
-  dtw.set_utterance_one(sf1.record(0));
-  dtw.set_utterance_two(sf2.record(0));
+  utilities::Matrix<double> r1, r2;
+  std::cout<<r1.Initialize(sf1.record(0))<<std::endl;
+  std::cout<<"first record set"<<std::endl;
+  r2.Initialize(sf2.record(0));
+  dtw.set_utterance_one(r1);
+  dtw.set_utterance_two(r2);
 
 
   dtw.ComputeSimilarityMatrix();
   //dtw.ComputeStandardDTW();
-  dtw.ComputeSegmentalDTW(20);
+  //dtw.ComputeSegmentalDTW(20);
   //dtw.SaveResultAsPGM( std::string("result.pgm"));
-  dtw.IncreaseSilenceCost(silence);
-  dtw.PrunePathsByLCMA(50, 0.1);
+  //dtw.IncreaseSilenceCost(silence);
+  //dtw.PrunePathsByLCMA(50, 0.1);
   dtw.SaveResultAsPGM( std::string("result_pruned.pgm"));
 }
   return 0;
