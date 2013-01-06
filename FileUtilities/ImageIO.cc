@@ -1,3 +1,7 @@
+// William Hartmann (hartmannw@gmail.com)
+// This is free and unencumbered software released into the public domain.
+// See the UNLICENSE file for more information.
+
 #include "ImageIO.h"
 
 namespace fileutilities
@@ -12,7 +16,7 @@ bool WritePlainPGM(const std::vector< std::vector<double> > &image,
   std::vector< std::vector<double> >::const_iterator rit;
   std::vector< double>::const_iterator cit;
 
-  //find maximum value in the entire image for normalization purposes
+  // Find the maximum and minimum values in the data to set the range.
   for( rit = image.begin(); rit != image.end(); ++rit)
     for( cit = (*rit).begin(); cit != (*rit).end(); ++cit)
     {
@@ -26,11 +30,13 @@ bool WritePlainPGM(const std::vector< std::vector<double> > &image,
 
   std::ofstream fout;
   fout.open(filename.c_str(), std::ios::out);
-  fout<<"P2\n";
-  fout<<image[0].size()<<" "<<image.size()<<"\n";
-  fout<<max<<"\n"; 
+  // Write out the standard plain text header.
+  fout<<"P2\n"; // Value to identify the image as an ASCII PGM.
+  fout<<image[0].size()<<" "<<image.size()<<"\n"; // Gives the image size.
+  fout<<max<<"\n"; // The maximum value in the image.
   for( rit = image.begin(); rit != image.end(); ++rit)
   {
+    // Renormalize the data to the range we want.
     value = static_cast<int>(((*(rit->begin()) - rangemin) / rangemax) * max);
     fout<<value;
     for( cit = ((*rit).begin() + 1); cit != (*rit).end(); ++cit)
@@ -69,7 +75,7 @@ bool WriteBinaryPGM(const std::vector< std::vector<double> > &image,
 
   std::ofstream fout;
   fout.open(filename.c_str(), std::ios::out);
-  fout<<"P5\n";
+  fout<<"P5\n"; // Value to identify the image as an 8-bit binary PGM.
   fout<<image[0].size()<<" "<<image.size()<<"\n";
   fout<<max<<"\n";
   fout.close();
