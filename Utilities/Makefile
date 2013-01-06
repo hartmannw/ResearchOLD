@@ -9,7 +9,7 @@ Matrix.o: Matrix.h Matrix.cc
 StringFunctions.o: StringFunctions.cc StringFunctions.h
 	$(CC) $(CFLAGS) $(INCLUDE) -c StringFunctions.cc
 
-MatrixFunctions.o: MatrixFunctions.cc MatrixFunctions.h
+MatrixFunctions.o: MatrixFunctions.cc MatrixFunctions.h Matrix.o
 	$(CC) $(CFLAGS) $(INCLUDE) -c MatrixFunctions.cc
 
 TestMatrix: testmatrix.cc Matrix.o
