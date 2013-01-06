@@ -170,6 +170,14 @@ T MaxElementInMatrix(const Matrix<T> &matrix, unsigned int &row,
   return MaxElementInMatrix(m, row, col);
 }
 
+template <typename T>
+T MaxElementInMatrix(const Matrix<T> &matrix)
+{
+  std::vector<std::vector<T> > m = matrix.GetVectorOfVectors();
+  unsigned int row, col;
+  return MaxElementInMatrix(m, row, col);
+}
+
 // Loops through the entire matrix to find the minimal element. Also gives the 
 // location of the element.
 template <typename T>

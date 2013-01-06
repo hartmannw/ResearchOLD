@@ -34,12 +34,12 @@ class Matrix
 
   T operator() (unsigned int row, unsigned int col) const;
   T& operator() (unsigned int row, unsigned int col);
-  unsigned int NumRows() { return rows_;}
-  unsigned int NumCols() { return cols_;}
-  std::vector<T> GetRow(unsigned int row);
-  std::vector<T> GetCol(unsigned int col);
-  std::vector<T> GetDiagonal();
-  std::vector<std::vector<T> > GetVectorOfVectors();
+  unsigned int NumRows() const { return rows_;}
+  unsigned int NumCols() const { return cols_;}
+  std::vector<T> GetRow(unsigned int row) const;
+  std::vector<T> GetCol(unsigned int col) const;
+  std::vector<T> GetDiagonal() const;
+  std::vector<std::vector<T> > GetVectorOfVectors() const;
 
   bool SetRow(unsigned int row, const std::vector<T> &values);
   bool SetRow(unsigned int row, T value);
@@ -48,7 +48,7 @@ class Matrix
   bool SetDiagonal(const std::vector<T> &values);
   bool SetDiagonal(T value);
 
-  bool isSquare(){ return rows_ == cols_; }
+  bool isSquare() const { return rows_ == cols_; }
 };
 
 template<class T>
@@ -115,7 +115,7 @@ T& Matrix<T>::operator() (unsigned int row, unsigned int col)
 }
 
 template<class T>
-std::vector<T> Matrix<T>::GetRow(unsigned int row)
+std::vector<T> Matrix<T>::GetRow(unsigned int row) const
 {
   std::vector<T> ret;
   if(row >= rows_) // This row does not exist;
@@ -127,7 +127,7 @@ std::vector<T> Matrix<T>::GetRow(unsigned int row)
 }
 
 template<class T>
-std::vector<T> Matrix<T>::GetCol(unsigned int col)
+std::vector<T> Matrix<T>::GetCol(unsigned int col) const
 {
   std::vector<T> ret;
   if(col >= cols_) // This col does not exist;
@@ -139,7 +139,7 @@ std::vector<T> Matrix<T>::GetCol(unsigned int col)
 }
 
 template<class T>
-std::vector<std::vector<T> > Matrix<T>::GetVectorOfVectors()
+std::vector<std::vector<T> > Matrix<T>::GetVectorOfVectors() const
 {
   std::vector<std::vector<T> > ret;
   ret.resize(rows_);
