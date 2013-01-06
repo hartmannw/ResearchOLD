@@ -10,20 +10,17 @@ namespace acousticunitdiscovery
 
 bool DynamicTimeWarp::ComputeSimilarityMatrix()
 {
-  if(utterance_one_.size() < 1 || utterance_two_.size() < 1) // We must have 
-    return false;                                            // utterances.
+  if(utterance_one_.NumRows() < 1 || utterance_two_.NumRows() < 1)
+    return false; // We must have two utterances.
   
-  similarity_matrix_.resize(utterance_one_.size());
-  for(unsigned int first = 0; first < utterance_one_.size(); ++first)
+  similarity_matrix_.Initialize(utterance_one_.NumRows(), 
+      utterance_two_.NumRows(), 0);
+  for(unsigned int first = 0; first < utterance_one_.NumRows(); ++first)
   {
-    similarity_matrix_[first].resize(utterance_two_.size());
-    for(unsigned int second = 0; second < utterance_two_.size(); ++second)
-      similarity_matrix_[first][second] = GetFeatureDistance(
-          utterance_one_[first], utterance_two_[second]);
+    for(unsigned int second = 0; second < utterance_two_.NumRows(); ++second)
+      similarity_matrix_(first, second) = GetFeatureDistance(
+          utterance_one_.GetRow(first), utterance_two_.GetRow(second) );
   }
-  //std::cout<<similarity_matrix_.size()<<" "<<similarity_matrix_[0].size()<<
-  //    " "<<similarity_matrix_[0][0]<<" "<<similarity_matrix_[0][100]<<
-  //    std::endl;
   return true;
 }
 
@@ -32,16 +29,16 @@ bool DynamicTimeWarp::ComputeStandardDTW()
   PathPoint start_point, end_point;
   unsigned int constraint;
 
-  if(similarity_matrix_.size() < 1 || similarity_matrix_[0].size() < 1)
+  if(similarity_matrix_.NumRows() < 1 || similarity_matrix_.NumCols() < 1)
     return false; //similarity_matrix has not been computed.
     
   // Set constraint such that all paths through the similarity matrix are 
   // possible.
-  constraint = similarity_matrix_.size() + similarity_matrix_[0].size();
+  constraint = similarity_matrix_.NumRows() + similarity_matrix_.NumCols();
   start_point.first = 0;  // Assumes we want a path from corner to corner in 
   start_point.second = 0; // the similarity matrix.
-  end_point.first = similarity_matrix_.size() - 1;
-  end_point.second = similarity_matrix_[0].size() - 1;
+  end_point.first = similarity_matrix_.NumRows() - 1;
+  end_point.second = similarity_matrix_.NumCols() - 1;
 
   // Actual logic for computing the best path is in DTW.
   return DTW(start_point, end_point, constraint);
@@ -51,35 +48,32 @@ bool DynamicTimeWarp::ComputeSegmentalDTW(unsigned int constraint)
 {
   unsigned int diagonal;
   // Move the starting point along the first column of the similarity matrix.
-  for(unsigned int r = 0; r < similarity_matrix_.size(); r+= (constraint*2)+1)
+  for(unsigned int r = 0; r < similarity_matrix_.NumRows(); 
+      r+= (constraint*2)+1)
   {
     PathPoint start_point, end_point;
     start_point.first = r; start_point.second = 0;
     // Note that if the similarity matrix is not square, the first path
     // computed may not be the same as the standard DTW.
-    diagonal = similarity_matrix_.size() - r;
-    if(similarity_matrix_[r].size() < diagonal) // Assumes we want the end
-      diagonal = similarity_matrix_[r].size();  // point to be along the
+    diagonal = similarity_matrix_.NumRows() - r;
+    if(similarity_matrix_.NumCols() < diagonal) // Assumes we want the end
+      diagonal = similarity_matrix_.NumCols();  // point to be along the
     end_point.first = (r + diagonal - 1);       // from the start point.
     end_point.second = (diagonal - 1);
-    //std::cout<<"("<<start_point.first<<","<<start_point.second<<") --> ("<<
-    //    end_point.first<<","<<end_point.second<<") "<<std::endl;
     DTW(start_point, end_point, constraint);
   }
   // Now move the starting point along the first row of the similarity matrix.
   // Avoids repeating the path with start point [0][0].
-  for(unsigned int c = (constraint*2)+1; c < similarity_matrix_[0].size(); 
+  for(unsigned int c = (constraint*2)+1; c < similarity_matrix_.NumCols(); 
       c+= (constraint*2)+1)
   {
     PathPoint start_point, end_point;
     start_point.first = 0; start_point.second = c;
-    diagonal = similarity_matrix_[0].size() - c;
-    if(similarity_matrix_.size() < diagonal)
-      diagonal = similarity_matrix_.size();
+    diagonal = similarity_matrix_.NumCols() - c;
+    if(similarity_matrix_.NumRows() < diagonal)
+      diagonal = similarity_matrix_.NumRows();
     end_point.first = diagonal -1;
     end_point.second = c + diagonal - 1;
-    //std::cout<<"("<<start_point.first<<","<<start_point.second<<") --> ("<<
-    //    end_point.first<<","<<end_point.second<<") "<<std::endl;
     DTW(start_point, end_point, constraint);
   }
   return true;
@@ -87,17 +81,13 @@ bool DynamicTimeWarp::ComputeSegmentalDTW(unsigned int constraint)
 
 bool DynamicTimeWarp::SaveResultAsPGM(std::string filename)
 {
-  double maxvalue =  std::numeric_limits<double>::min();
-  // Find the maximum vlaue in the similarity matrix.
-  for(unsigned int r = 0; r < similarity_matrix_.size(); r++)
-    for(unsigned int c = 0; c < similarity_matrix_[r].size(); c++)
-      if(similarity_matrix_[r][c] > maxvalue)
-        maxvalue = similarity_matrix_[r][c];
+  double maxvalue = utilities::MaxElementInMatrix(similarity_matrix_);
 
   // Sets the value for any point in the similarity matrix that corresponds to
   // a path to the maximum value.  This achieves the effect of making the paths
   // white in the resulting image.
-  std::vector< std::vector<double> > simmx = similarity_matrix_;
+  std::vector< std::vector<double> > simmx = 
+      similarity_matrix_.GetVectorOfVectors();
   for(unsigned int i = 0; i < paths_.size(); i++)
     for(unsigned int j = 0; j < paths_[i].path.size(); j++)
       simmx[ paths_[i].path[j].first ][ paths_[i].path[j].second] = maxvalue;
@@ -166,7 +156,7 @@ std::vector<double> DynamicTimeWarp::BestScorePerFrame()
 {
   std::vector<double> result;
   double max_value = 0;
-  result.resize(utterance_one_.size(), 0);
+  result.resize(utterance_one_.NumRows(), 0);
   for(unsigned int i=0; i < paths_.size(); i++)
   {
     double total_score = paths_[i].total_score;
@@ -211,29 +201,26 @@ double DynamicTimeWarp::GetFeatureDistance(const std::vector<double> &one,
     one_magnitude += one[i] * one[i];
     two_magnitude += two[i] * two[i];
   }
-  distance = 1 - (((distance / ( sqrt(one_magnitude) * sqrt(two_magnitude) ))+1)/2);
+  distance = 1 - (((distance / ( sqrt(one_magnitude) * 
+            sqrt(two_magnitude) ))+1)/2);
   return distance;
 }
 
 bool DynamicTimeWarp::DTW(const PathPoint &startpoint,
     const PathPoint &endpoint, const unsigned int &constraint)
 {
-  std::vector< std::vector<double> > dp_matrix; //dp as in dynamic 
-                                                //programming
-  std::vector< std::vector<TrackBackDirection> > backtrack_matrix;
+  utilities::Matrix<double> dp_matrix; // dp as in dynamic programming
+  utilities::Matrix<TrackBackDirection> backtrack_matrix;
   PathPoint current_point;
 
   dp_matrix = similarity_matrix_;
 
-  //We initialize the matrix here because if it is done in the next loop, rows
-  //before the start point will not be initialized.
-  backtrack_matrix.resize( similarity_matrix_.size() );
-  for (unsigned int r = 0; r < similarity_matrix_.size(); ++r)
-    backtrack_matrix[r].resize( similarity_matrix_[r].size(), INVALID );
-
-  for(unsigned int r = startpoint.first; r < similarity_matrix_.size(); ++r)
+  backtrack_matrix.Initialize(dp_matrix.NumRows(), dp_matrix.NumCols());
+  backtrack_matrix.SetCol(0, INVALID);
+  
+  for(unsigned int r = startpoint.first; r < similarity_matrix_.NumRows(); ++r)
   {
-    for(unsigned int c = startpoint.second; c < similarity_matrix_[r].size();
+    for(unsigned int c = startpoint.second; c < similarity_matrix_.NumCols();
         ++c) 
     {
       if(PointWithinConstraint(startpoint,r,c,constraint))
@@ -241,18 +228,17 @@ bool DynamicTimeWarp::DTW(const PathPoint &startpoint,
         current_point.first = r;
         current_point.second = c;
         SetBestOrigin(startpoint, current_point, constraint, dp_matrix, 
-            backtrack_matrix[r][c], backtrack_matrix);
+            backtrack_matrix(r,c), backtrack_matrix);
       }
     }
   }
   AddBestPath(dp_matrix, backtrack_matrix, endpoint);
-  //std::cout<<paths_.size()<<" "<<paths_[0].path.size()<<std::endl;
   return true;
 }
 
 bool DynamicTimeWarp::AddBestPath(
-    const std::vector< std::vector<double > > &dp_matrix,
-    const std::vector< std::vector<TrackBackDirection> > &backtrack_matrix,
+    const utilities::Matrix<double> &dp_matrix,
+    const utilities::Matrix<TrackBackDirection> &backtrack_matrix,
     const PathPoint &endpoint)
 {
   unsigned int r = endpoint.first;
@@ -262,24 +248,24 @@ bool DynamicTimeWarp::AddBestPath(
 
   point.first = r;
   point.second = c;
-  point.score = similarity_matrix_[r][c];
+  point.score = similarity_matrix_(r,c);
   path.path.push_back(point);
-  path.total_score = dp_matrix[r][c];
+  path.total_score = dp_matrix(r,c);
 
-  while(backtrack_matrix[r][c] != ORIGIN)
+  while(backtrack_matrix(r,c) != ORIGIN)
   {
     if(r < 0 || c < 0) // Best path leads off the similarity matrix.
       return false;
 
-    if(backtrack_matrix[r][c] == FIRST_DIMENSION)
+    if(backtrack_matrix(r,c) == FIRST_DIMENSION)
     {
       r = r - 1;
     }
-    else if(backtrack_matrix[r][c] == SECOND_DIMENSION)
+    else if(backtrack_matrix(r,c) == SECOND_DIMENSION)
     {
       c = c -1;
     }
-    else if(backtrack_matrix[r][c] == DIAGONAL)
+    else if(backtrack_matrix(r,c) == DIAGONAL)
     {
       r = r - 1;
       c = c - 1;
@@ -291,7 +277,7 @@ bool DynamicTimeWarp::AddBestPath(
     PathPoint point;
     point.first = r;
     point.second = c;
-    point.score = similarity_matrix_[r][c];
+    point.score = similarity_matrix_(r,c);
     path.path.push_back(point);
   }
   // Points were added to vector in reverse order.
@@ -303,9 +289,9 @@ bool DynamicTimeWarp::AddBestPath(
 
 bool DynamicTimeWarp::SetBestOrigin(PathPoint start_point,
     PathPoint current_point, 
-    unsigned int constraint, std::vector<std::vector< double> > &dp_matrix,
+    unsigned int constraint, utilities::Matrix<double> &dp_matrix,
     TrackBackDirection &direction, 
-    const std::vector<std::vector< TrackBackDirection> > &trackback)
+    const utilities::Matrix<TrackBackDirection> &trackback)
 {
   double best_score = std::numeric_limits<double>::max();
   direction = INVALID;
@@ -319,34 +305,34 @@ bool DynamicTimeWarp::SetBestOrigin(PathPoint start_point,
   }
   // Check the first dimension.
   if( static_cast<int>(current_point.first) > 0 &&
-      trackback[current_point.first-1][current_point.second] != INVALID &&
-      dp_matrix[current_point.first-1][current_point.second] < best_score)
+      trackback(current_point.first-1,current_point.second) != INVALID &&
+      dp_matrix(current_point.first-1,current_point.second) < best_score)
   {
     direction = FIRST_DIMENSION;
-    best_score = dp_matrix[current_point.first-1][current_point.second]; 
+    best_score = dp_matrix(current_point.first-1,current_point.second); 
   }
   // Check the second dimension.
   if( static_cast<int>(current_point.second) > 0 && 
-      trackback[current_point.first][current_point.second-1] != INVALID &&
-      dp_matrix[current_point.first][current_point.second-1] < best_score)
+      trackback(current_point.first,current_point.second-1) != INVALID &&
+      dp_matrix(current_point.first,current_point.second-1) < best_score)
   {
     direction = SECOND_DIMENSION;
-    best_score = dp_matrix[current_point.first][current_point.second-1];
+    best_score = dp_matrix(current_point.first,current_point.second-1);
   }
   // Check along the diagonal.
   if( static_cast<int>(current_point.first) > 0 && 
       static_cast<int>(current_point.second) > 0 && 
-      trackback[current_point.first-1][current_point.second-1] != INVALID &&
-      dp_matrix[current_point.first-1][current_point.second-1] < best_score)
+      trackback(current_point.first-1,current_point.second-1) != INVALID &&
+      dp_matrix(current_point.first-1,current_point.second-1) < best_score)
   {
     direction = DIAGONAL;
-    best_score = dp_matrix[current_point.first-1][current_point.second-1];
+    best_score = dp_matrix(current_point.first-1,current_point.second-1);
   }
   if(direction == INVALID) // We could not find a valid point which leads to 
   {                        // the current point, so the current point must also
     return false;          // be invalid.
   }
-  dp_matrix[current_point.first][current_point.second]+= best_score;
+  dp_matrix(current_point.first,current_point.second)+= best_score;
   return true;  
 }
 
@@ -464,21 +450,7 @@ bool DynamicTimeWarp::ExtendPath(const DtwPath &path, double expansion_factor,
     }
     length = section.second - section.first + 1;
   }
-  //std::cout<<initial_length<<" --> "<<length<<" AND "<<initial_score<<" --> "<<section.score<<std::endl;
   return true;  
-}
-
-void DynamicTimeWarp::PrintSubMatrix(std::vector< std::vector< double> > &m)
-{
-  unsigned int stopr, stopc;
-  stopr = 10;
-  stopc = 10;
-  for(unsigned int r = 0; r < stopr; r++)
-  {
-    for(unsigned int c = 0; c < stopc; c++)
-      std::cout<<m[r][c]<<" ";
-    std::cout<<std::endl;
-  }
 }
 
 } //end namespace acousticunitdiscovery

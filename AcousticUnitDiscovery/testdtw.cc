@@ -1,5 +1,6 @@
 #include "SpeechFeatures.h"
 #include "DynamicTimeWarp.h"
+#include "Matrix.h"
 #include <vector>
 #include <iostream>
 #include <string>
@@ -24,14 +25,11 @@ int main()
   std::string fname1, fname2, fname_sil;
   //acousticunitdiscovery::DynamicTimeWarp dtw;
 
-  //fname1 = "utt1.cep.mvn";
-  //fname2 = "utt2.cep.mvn";
-  fname1 = "../../babel/features/BP_101/scripted/training/plp/BABEL_BP_101_11422_20111019_143344_D2_scripted.htk.mvn";
-  fname2 = "../../babel/features/BP_101/scripted/training/plp/BABEL_BP_101_12003_20111116_130201_D2_scripted.htk.mvn";
-  fname2 = "../../babel/features/BP_101/scripted/training/plp/BABEL_BP_101_32890_20111130_215110_S8_scripted.htk.mvn";
-  fname_sil = "../../babel/features/BP_101/scripted/training/silence/BABEL_BP_101_11422_20111019_143344_D2_scripted.sil";
+  fname1 = "utt1.cep.mvn";
+  fname2 = "utt2.cep.mvn";
+  //fname_sil = "../../babel/features/BP_101/scripted/training/silence/BABEL_BP_101_11422_20111019_143344_D2_scripted.sil";
   std::vector<bool> silence;                                                
-  silence = ReadSilence(fname_sil); 
+  //silence = ReadSilence(fname_sil); 
 
 
   sf1.ReadHtkFile(fname1);

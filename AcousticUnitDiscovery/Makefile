@@ -1,6 +1,7 @@
 CC=g++
 CFLAGS=-Wall -O2
-INCLUDE=-I../FileUtilities/
+INCLUDE=-I../FileUtilities/ \
+				-I../Utilities/
 
 all: TestDTW TestMultiBest
 

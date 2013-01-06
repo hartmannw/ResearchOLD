@@ -1,6 +1,7 @@
 // William Hartmann (hartmannw@gmail.com)
+// This is free and unencumbered software released into the public domain.
+// See the UNLICENSE file for more information.
 //
-// DynamicTimeWarp.h
 // Definition for the DynamicTimeWarp class.  The general usage for the class 
 // is to read in two feature vectors, compute a similarity matrix, and finally
 // compute either the DTW path or the set of Segmental DTW paths.  The
@@ -14,12 +15,13 @@
 #ifndef ACOUSTICUNITDISCOVERY_DYNAMICTIMEWARP_H_
 #define ACOUSTICUNITDISCOVERY_DYNAMICTIMEWARP_H_
 
-#include<iostream> // only for debugging purposes, REMOVE later
 #include<vector>
 #include<cmath>
 #include<limits>
 #include<algorithm>
 
+#include "Matrix.h"
+#include "MatrixFunctions.h"
 #include "ImageIO.h" // Functions for writing the similarity matrix and paths
                      // as an image.
 
@@ -61,9 +63,9 @@ class DynamicTimeWarp
   ~DynamicTimeWarp(){}
 
   // Stores the utterances
-  void set_utterance_one( const std::vector< std::vector<double> > &utterance){ 
+  void set_utterance_one( const utilities::Matrix<double> &utterance){ 
       utterance_one_ = utterance;}
-  void set_utterance_two( const std::vector< std::vector<double> > &utterance){
+  void set_utterance_two( const utilities::Matrix<double> &utterance){
       utterance_two_ = utterance;}
 
   // Access functions
@@ -119,15 +121,14 @@ class DynamicTimeWarp
  
  private:
   
-  std::vector< std::vector< double> > utterance_one_; // Utterances are assumed
-  std::vector< std::vector< double> > utterance_two_; // to be organized as
-                                                      // frames x features, so
-                                                      // the first index is
-                                                      // into the frame.
+  utilities::Matrix<double> utterance_one_; // Utterances are assumed to be
+  utilities::Matrix<double> utterance_two_; // organized as frames x features,
+                                            // so the first index is into the 
+                                            // frame.
 
   // Stores the distances between the feature vectors for every pair of frames 
   // in utterance_one and utterance_two.
-  std::vector< std::vector< double> > similarity_matrix_;
+  utilities::Matrix<double> similarity_matrix_;
   std::vector< DtwPath > paths_;  // All computed paths are stored here.
 
   // Computes the distance between the two given feature vectors.  Currently 
@@ -149,9 +150,9 @@ class DynamicTimeWarp
   // the dynamic programming matrix and stores the cost of the best path to any
   // given point computed so far.
   bool SetBestOrigin(PathPoint start_point, PathPoint current_point, 
-      unsigned int constraint, std::vector<std::vector< double> > &dp_matrix,
+      unsigned int constraint, utilities::Matrix<double> &dp_matrix,
       TrackBackDirection &direction,
-      const std::vector<std::vector< TrackBackDirection> > &trackback);
+      const utilities::Matrix<TrackBackDirection> &trackback);
 
   // Identifies whether a point can be reached given the starting location and
   // constraint.
@@ -161,8 +162,8 @@ class DynamicTimeWarp
   // From the given dp_matrix, storing the best path to any given point from
   // the starting point, the best path to the endpoint is found.  The path is 
   // automatically added to paths_.
-  bool AddBestPath( const std::vector< std::vector<double > > &dp_matrix, 
-      const std::vector< std::vector<TrackBackDirection> > &backtrack_matrix,
+  bool AddBestPath( const utilities::Matrix<double> &dp_matrix, 
+      const utilities::Matrix<TrackBackDirection> &backtrack_matrix,
       const PathPoint &endpoint);
 
   // Length Constrained Minimum Average (LMCA) susbsequence finds the best 
@@ -177,8 +178,6 @@ class DynamicTimeWarp
   bool ExtendPath(const DtwPath &path, double expansion_factor,
       PathPoint &section);
 
-  void PrintSubMatrix(std::vector< std::vector<double> > &m);//only for testing
-                                                             //DELETE later.
 };
 
 }// end namespace acousticunitdiscovery
