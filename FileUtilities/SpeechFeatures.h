@@ -1,4 +1,6 @@
-//William Hartmann (hartmann@limsi.fr)
+// William Hartmann (hartmannw@gmail.com)
+// This is free and unencumbered software released into the public domain.
+// See the UNLICENSE file for more information.
 
 #ifndef FILEUTILITIES_SPEECHFEATURES_H_
 #define FILEUTILITIES_SPEECHFEATURES_H_
@@ -10,6 +12,8 @@
 #include<algorithm>
 #include "stdint.h"
 #include "sys/stat.h"
+
+#include "Matrix.h"
 
 namespace fileutilities
 {
@@ -47,16 +51,17 @@ class SpeechFeatures
   ~SpeechFeatures() {}; //nothing to clean up
   int num_records() { return features_.size(); }
   int feature_width() { return feature_width_; }
-  int num_frames(int record) { return features_[record].size(); }
+  int num_frames(int record) { return features_[record].NumRows(); }
   int feature(int record, int frame, int feature) {
-      return features_[record][frame][feature]; }
+      return features_[record](frame,feature); }
   std::vector<double> frame(int record, int frame) { 
-      return features_[record][frame]; }
-  std::vector< std::vector<double> > frames(int record, int start, int end);
-  std::vector< std::vector<double> > record(int record){ 
+      return features_[record].GetRow(frame); }
+  utilities::Matrix<double> frames(int record, int start, int end);
+  utilities::Matrix<double> record(int record){ 
       return features_[record]; }
 
   void Initialize(std::vector<std::vector<double> > record);
+  void Initialize(utilities::Matrix<double> record);
 
   bool ReadCepFile(std::string filename);
   bool ReadHtkFile(std::string filename);
@@ -69,7 +74,7 @@ class SpeechFeatures
   template <class T>
   void EndianSwap(T *objp);
   //three layers, record, frame, feature
-  std::vector< std::vector< std::vector<double> > > features_;
+  std::vector< utilities::Matrix<double> > features_;
   int feature_width_;
 };
 

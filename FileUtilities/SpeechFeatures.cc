@@ -23,17 +23,16 @@ bool SpeechFeatures::ReadCepFile( std::string filename )
   features_.resize(header.number_of_records);
   for(int r = 0; r < header.number_of_records; ++r)
   {
-    features_[r].resize(number_of_frames[r]);
+    features_[r].Initialize(number_of_frames[r], feature_width_);
     float *vector;
     vector = new float [feature_width_];
     for(int f = 0; f < number_of_frames[r]; ++f)
     {
-      features_[r][f].resize(feature_width_);
       fin.read(reinterpret_cast<char*> (vector),                                
           sizeof(float) * feature_width_);
       for(int c = 0; c < feature_width_; ++c)
       {
-        features_[r][f][c] = static_cast<double>(vector[c]);
+        features_[r](f,c) = static_cast<double>(vector[c]);
       }
     }
     delete[] vector;
@@ -59,24 +58,19 @@ bool SpeechFeatures::ReadHtkFile( std::string filename )
   EndianSwap(&header.sample_size);
   EndianSwap(&header.sample_period);
   EndianSwap(&header.parameter_kind);
-  //std::cout<<header.number_of_samples<<std::endl;
-  //std::cout<<header.sample_size<<std::endl;
-  //std::cout<<header.sample_period<<std::endl;
-  //std::cout<<header.parameter_kind<<std::endl;
   feature_width_ = header.sample_size / 4; //we are assuming each individual 
                                            //feature is a 4 byte float
   features_.resize(1); //htk files only store one record at a time.
-  features_[0].resize(header.number_of_samples);
+  features_[0].Initialize(header.number_of_samples, feature_width_);
   float *vector;
   vector = new float [feature_width_];
   for(int f = 0; f < header.number_of_samples; ++f)
   {
-    features_[0][f].resize(feature_width_);
     fin.read(reinterpret_cast<char*> (vector), sizeof(float)*feature_width_);
     for(int c = 0; c < feature_width_; ++c)
     {
       EndianSwap(&vector[c]);
-      features_[0][f][c] = static_cast<double>(vector[c]);
+      features_[0](f,c) = static_cast<double>(vector[c]);
     }
   }
   delete[] vector;
@@ -89,11 +83,11 @@ bool SpeechFeatures::WritePfileAscii(std::string filename)
   fout.open(filename.c_str(), std::ios::out);
 
   for(unsigned int r = 0; r < features_.size(); ++r)
-    for(unsigned int f = 0; f < features_[r].size(); ++f)
+    for(unsigned int f = 0; f < features_[r].NumRows(); ++f)
     {
-      fout << r <<" "<< f <<" "<< features_[r][f][0];
-      for(unsigned int c = 1; c < features_[r][f].size(); ++c)
-        fout << " " << features_[r][f][c];
+      fout << r <<" "<< f <<" "<< features_[r](f,0);
+      for(unsigned int c = 1; c < features_[r].NumCols(); ++c)
+        fout << " " << features_[r](f,c);
       fout << "\n";
     }
 
@@ -107,9 +101,9 @@ bool SpeechFeatures::WriteHtkFile(std::string filename)
   fout.open(filename.c_str(), std::ios::out|std::ios::binary);
   
   HtkFileHeader header;
-  header.number_of_samples = features_[0].size();
+  header.number_of_samples = features_[0].NumRows();
   header.sample_period = 0;
-  header.sample_size = features_[0][0].size() * 4;
+  header.sample_size = features_[0].NumCols() * 4;
   header.parameter_kind = 9;
   EndianSwap(&header.number_of_samples);
   EndianSwap(&header.sample_size);
@@ -118,10 +112,10 @@ bool SpeechFeatures::WriteHtkFile(std::string filename)
 
   fout.write( reinterpret_cast<char*>(&header), sizeof(header));
 
-  for(unsigned int f = 0; f < features_[0].size(); f++)
-    for(unsigned int c = 0; c < features_[0][f].size(); c++)
+  for(unsigned int f = 0; f < features_[0].NumRows(); f++)
+    for(unsigned int c = 0; c < features_[0].NumCols(); c++)
     {
-      float item = static_cast<float>(features_[0][f][c]);
+      float item = static_cast<float>(features_[0](f,c));
       EndianSwap(&item);
       fout.write( reinterpret_cast<char*>(&item), sizeof(item));
     }
@@ -133,6 +127,14 @@ bool SpeechFeatures::WriteHtkFile(std::string filename)
 void SpeechFeatures::Initialize(std::vector<std::vector<double> > record)
 {
   feature_width_ = record[0].size();
+  features_.clear();
+  features_.resize(1);
+  features_[0].Initialize(record);
+}
+
+void SpeechFeatures::Initialize( utilities::Matrix<double> record)
+{
+  feature_width_ = record.NumCols();
   features_.clear();
   features_.push_back(record);
 }
@@ -156,27 +158,30 @@ void SpeechFeatures::EndianSwap(T *objp)
 std::vector<double> SpeechFeatures::CalculateRecordMean(int record)
 {
   std::vector<double> mean;
-  mean.resize( features_[record][0].size() );
+  mean.resize( features_[record].NumCols() );
 
   for(unsigned int i = 0; i < mean.size(); ++i)
     mean[i] = 0;
 
-  for(unsigned int f = 0; f < features_[record].size(); ++f)
+  for(unsigned int f = 0; f < features_[record].NumRows(); ++f)
     for( unsigned int c = 0; c < mean.size(); ++c)
-      mean[c]+= features_[record][f][c];
+      mean[c]+= features_[record](f,c);
 
   for(unsigned int i = 0; i < mean.size(); ++i)
-    mean[i] = mean[i] / features_[record].size();
+    mean[i] = mean[i] / features_[record].NumRows();
 
   return mean;
 }
 
-std::vector< std::vector<double> > SpeechFeatures::frames(int record, int start,
+utilities::Matrix<double> SpeechFeatures::frames(int record, int start,
     int end)
 {
-  std::vector<std::vector<double> > ret;
-  for(int i = start; i <= end; ++i)
-    ret.push_back(features_[record][i]);
+  utilities::Matrix<double> ret;
+  int numRows = (end-start) + 1;
+  ret.Initialize(numRows, feature_width_);
+  for(int f = 0; f < numRows; ++f)
+    for(int c = 0; c < feature_width_; ++c)
+      ret(f, c) = features_[record](f+start, end);
   return ret;
 }
 
