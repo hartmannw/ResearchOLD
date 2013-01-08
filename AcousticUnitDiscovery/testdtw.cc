@@ -41,8 +41,10 @@ for(int i = 0; i < 1; i++)
   std::cout<<"Iteration "<<i<<"\n";
   acousticunitdiscovery::DynamicTimeWarp dtw;
   utilities::Matrix<double> r1, r2;
-  r1.Initialize(sf1.record(0));
-  r2.Initialize(sf2.record(0));
+  //r1.Initialize(sf1.record(0));
+  //r2.Initialize(sf2.record(0));
+  r1 = sf1.record(0);
+  r2 = sf2.record(0);
   dtw.set_utterance_one(r1);
   dtw.set_utterance_two(r2);
 

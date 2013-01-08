@@ -7,6 +7,7 @@
 
 #include<iostream>
 #include<vector>
+#include<algorithm>
 
 namespace utilities
 {
@@ -50,6 +51,7 @@ class Matrix
   bool SetDiagonal(T value);
 
   bool isSquare() const { return rows_ == cols_; }
+  bool Transpose();
 };
 
 template<class T>
@@ -220,6 +222,25 @@ bool Matrix<T>::SetDiagonal(T value)
     return false;
   for(unsigned int i = 0; i < rows_; ++i)
     matrix_[ (i * cols_) + i] = value;
+  return true;
+}
+
+// Note that a transposition is really just a representation issue. It is 
+// possible and probably more efficient to simply set a transposition flag. Then
+// every interaction with the class flips the rows and cols. It does add extra
+// to every function call, so for the time being we are performing the less 
+// efficient action of actually moving the data.
+template<class T>
+bool Matrix<T>::Transpose()
+{
+  for(unsigned int r = 0; r < rows_; ++r)
+    for(unsigned int c = r+1; c < cols_; ++c)
+    {
+      unsigned int index = (r * cols_) + c;
+      unsigned int transpose = (c * cols_) + r;
+      std::swap(matrix_[index], matrix_[transpose]);
+    }
+  std::swap(rows_, cols_);
   return true;
 }
 

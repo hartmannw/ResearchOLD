@@ -7,6 +7,7 @@
 
 #include<vector>
 #include<cmath>
+#include "Matrix.h"
 
 namespace acousticunitdiscovery
 {
@@ -19,11 +20,14 @@ typedef struct
   double score; // Score for this particular point along the path.
 } ViterbiInfo;
 
-std::vector<std::vector<double> > GenerateTransitionMatrix(
+utilities::Matrix<double> GenerateTransitionMatrix(
     unsigned int states, double self_loop_prob);
 
-std::vector<int> FindBestPath(const std::vector<std::vector<double> > &pgram, 
-    const std::vector<std::vector<double> > &transition, int min_frames);
+std::vector<int> FindBestPath(const utilities::Matrix<double> &pgram, 
+    const utilities::Matrix<double> &transition, int min_frames);
+
+std::vector<int> BestPathInDpMatrix(
+    const utilities::Matrix<ViterbiInfo> &dp_matrix, unsigned int min_frames);
 
 }
 
