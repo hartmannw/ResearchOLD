@@ -49,7 +49,8 @@ std::vector<int> FindBestPath(const utilities::Matrix<double> &pgram,
       for(unsigned int p = 0; p < states; ++p)
       {
         unsigned int parent_index = (p * min_frames) + (min_frames - 1);
-        double score = dp_matrix(p,f-1).score + transition(s,p) + pgram(s,f);
+        double score = dp_matrix(parent_index,f-1).score + transition(s,p) + 
+            pgram(s,f);
         if(score > best_score)
         {
           best_score = score;
@@ -98,13 +99,19 @@ std::vector<int> BestPathInDpMatrix(
       endpoint.parent = s;
       endpoint.score = dp_matrix(s, frames-1).score;
     }
-  //ret.push_back(endpoint.parent);
-  //endpoint = dp_matrix(endpoint.parent, frames -1);
-  for(unsigned int f = frames-2; f >= 0; --f)
+  
+  int last = -1;
+  for(int f = frames-1; f >= 0; --f)
   {
-    ret.push_back(endpoint.parent);
+    int index = std::floor(static_cast<double>(endpoint.parent) / 
+          static_cast<double>(min_frames));
+    //std::cout<<endpoint.parent<<" "<<index<<std::endl;
+    if(index != last)
+      ret.push_back(index);
     endpoint = dp_matrix(endpoint.parent, f);
+    last = index;
   }
+  std::reverse(ret.begin(), ret.end());
   return ret;
 }
 

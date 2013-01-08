@@ -102,7 +102,6 @@ bool Matrix<T>::Initialize(const std::vector<std::vector<T> > &matrix)
     }
     for(unsigned int c = 0; c < cols_; ++c)
     {
-      //std::cout<<r<<" "<<c<<std::endl;
       matrix_[ (cols_ * r) + c ] = matrix[r][c];
     }
   }
@@ -140,7 +139,7 @@ std::vector<T> Matrix<T>::GetCol(unsigned int col) const
   if(col >= cols_) // This col does not exist;
     return ret;
   ret.resize(rows_);
-  for(unsigned int r = 0; r < cols_; ++r)
+  for(unsigned int r = 0; r < rows_; ++r)
     ret[r] = matrix_[ (r * cols_) + col ];
   return ret;
 }

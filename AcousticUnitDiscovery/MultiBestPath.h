@@ -7,6 +7,7 @@
 
 #include<vector>
 #include<cmath>
+#include<algorithm>
 #include "Matrix.h"
 
 namespace acousticunitdiscovery
