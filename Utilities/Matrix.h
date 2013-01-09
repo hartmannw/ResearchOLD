@@ -80,6 +80,7 @@ bool Matrix<T>::Initialize(unsigned int rows, unsigned int cols, T value)
 {
   rows_ = rows;
   cols_ = cols;
+  matrix_.clear();
   matrix_.resize(rows * cols, value);
   return true;
 }
