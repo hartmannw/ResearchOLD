@@ -9,6 +9,7 @@
 #include<cmath>
 #include<algorithm>
 #include "Matrix.h"
+#include "ImageIO.h"
 
 namespace acousticunitdiscovery
 {
@@ -27,8 +28,24 @@ utilities::Matrix<double> GenerateTransitionMatrix(
 std::vector<int> FindBestPath(const utilities::Matrix<double> &pgram, 
     const utilities::Matrix<double> &transition, int min_frames);
 
+std::vector<int> FindViterbiPath(const utilities::Matrix<double> &pgram,         
+    const utilities::Matrix<double> &transition, int min_frames);
+
+std::vector<int> FindRestrictedViterbiPath(                                      
+    const utilities::Matrix<double> &pgram,                                      
+    const utilities::Matrix<double> &transition, int min_frames,                 
+    std::vector<int> initial_path);
+
+double GetStateScore(const utilities::Matrix<double> &pgram,                     
+    const std::vector<int> &initial_path, int min_frames, int state, int frame);
+
+double GetTransitionScore(const utilities::Matrix<double> &transition,           
+    const std::vector<int> &initial_path, int min_frames, int from_state,     
+    int to_state);
+
 std::vector<int> BestPathInDpMatrix(
-    const utilities::Matrix<ViterbiInfo> &dp_matrix, unsigned int min_frames);
+    const utilities::Matrix<ViterbiInfo> &dp_matrix, unsigned int min_frames,
+    const std::vector<int> &initial_path);
 
 }
 
