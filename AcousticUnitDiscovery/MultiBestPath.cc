@@ -116,8 +116,9 @@ std::vector<int> FindRestrictedViterbiPath(
   utilities::Matrix<ViterbiInfo> dp_matrix; // Holds the memoization data.
   unsigned int states = (pgram.NumRows() + initial_path.size()) * min_frames;
   unsigned int frames = pgram.NumCols();
-  double minimum_log = -1000000; // Essentially represents log(0). Used for
+  double zero_log = -1000000;    // Essentially represents log(0). Used for
                                  // states that should be unreachable.
+  double minimum_log = -50;
 
   // We initialize the the dp_matrix. Initially, every state is set with the
   // minimum score and considered inaccessible. If there is an initial path 
@@ -125,7 +126,7 @@ std::vector<int> FindRestrictedViterbiPath(
   // Otherwise, the initial substate for every state is valid.
   ViterbiInfo default_value;
   default_value.parent = -1;
-  default_value.score = minimum_log;
+  default_value.score = zero_log;
   dp_matrix.Initialize(states, frames, default_value);
 
   if(initial_path.size() > 0) // Only first overall state is a valid start
@@ -143,27 +144,49 @@ std::vector<int> FindRestrictedViterbiPath(
   // Fill in the remainder of the dp_matrix
   for(unsigned int f = 1; f < frames; ++f)
   {
+    // While the transistion logic has been pushed off to a separate function it
+    // is too slow to loop over the full number of states. Instead we limit the
+    // innermost loop to only valid transitions.
     for(unsigned int s = 0; s < states; ++s)
     {
       ViterbiInfo best_point;
-      best_point.parent = 0;
-      best_point.score = dp_matrix(0, f-1).score + std::max(
-          GetTransitionScore(transition, initial_path, min_frames, 0, s),
-          minimum_log);
-      for(unsigned int p = 1; p < states; ++p)
-      {
-        double score = dp_matrix(p, f-1).score + std::max(
-            GetTransitionScore(transition, initial_path, min_frames, p, s),
-            minimum_log);
-        if(score > best_point.score)
-        {
-          best_point.score = score;
-          best_point.parent = p;
+      best_point.parent = s;
+      best_point.score = dp_matrix(s, f-1).score + std::max(
+          GetTransitionScore(transition, initial_path, min_frames, s, s),
+          zero_log);
+      if( (s < (initial_path.size() * min_frames) - 1) || // Still initial path
+          (s % min_frames > 0) ) // Transition within the set of substates.
+      { // Only self loop and immediately previous state are valid.
+        if(s > 0) // Can only come from the immediately preceeding state if one
+        {         // exists.
+          double score = dp_matrix(s-1, f-1).score + std::max(
+              GetTransitionScore(transition, initial_path, min_frames, s-1, s),
+              zero_log);
+          if(score > best_point.score)
+          {
+            best_point.score = score;
+            best_point.parent = s-1;
+          }
         }
-      } // end for p
+      }
+      else
+      {
+        for(unsigned int p = (min_frames - 1); p < states; p+=min_frames)
+        {
+          double score = dp_matrix(p, f-1).score + std::max(
+              GetTransitionScore(transition, initial_path, min_frames, p, s),
+              zero_log);
+          if(score > best_point.score)
+          {
+            best_point.score = score;
+            best_point.parent = p;
+          }
+        } // end for p
+      }
       best_point.score += std::max(
           GetStateScore(pgram, initial_path, min_frames, s, f), minimum_log);
       dp_matrix(s, f) = best_point;
+      //std::cout<<f<<" "<<best_point.parent<<" to "<<s<<" "<<best_point.score<<std::endl;
     } // end for s
   } // end for f
 
@@ -252,7 +275,7 @@ double GetTransitionScore(const utilities::Matrix<double> &transition,
     true_to_state -= initial_path.size();
 
   // First handle transition logic if we are inside the restricted path
-  if( true_to_state < static_cast<int>(initial_path.size()))
+  if( (to_state < (min_frames * 3)) || (from_state < ( (min_frames*3) -1)) )
   {
     if( (to_state == from_state) || (to_state == (from_state+1)) )
       return transition(true_from_state, true_to_state);

@@ -23,7 +23,9 @@ int main()
   utilities::Matrix<double> pgram = sf.record(0);
   pgram.Transpose();
 
-  PrintVector(pgram.GetCol(6));
+  //PrintVector(pgram.GetCol(4));
+  //PrintVector(pgram.GetCol(5));
+  //PrintVector(pgram.GetCol(6));
 
   std::cout<<pgram.NumRows()<<" "<<pgram.NumCols()<<std::endl;
   for(unsigned int r = 0; r < pgram.NumRows(); ++r)
@@ -31,7 +33,7 @@ int main()
       pgram(r,c) = std::log(pgram(r,c));
 
   std::vector<int> path = 
-    acousticunitdiscovery::FindBestPath(pgram, transition, 3);
+    acousticunitdiscovery::FindBestPath(pgram, transition, 10);
 
   for(unsigned int i = 0; i < path.size(); ++i)
     std::cout<<path[i]<<" ";
@@ -39,11 +41,11 @@ int main()
   std::cout<<path.size()<<std::endl;
   
   std::vector<int> initial_path;
-  initial_path.push_back(62);
-  initial_path.push_back(12);
-  initial_path.push_back(14);
+  initial_path.push_back(51);
+  initial_path.push_back(17);
+  initial_path.push_back(19);
 
-  path = acousticunitdiscovery::FindRestrictedViterbiPath(pgram, transition, 3,
+  path = acousticunitdiscovery::FindRestrictedViterbiPath(pgram, transition, 10,
       initial_path);
 
   for(unsigned int i = 0; i < path.size(); ++i)
