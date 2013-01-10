@@ -45,12 +45,14 @@ int main()
   initial_path.push_back(17);
   initial_path.push_back(19);
 
+  double score;
   path = acousticunitdiscovery::FindRestrictedViterbiPath(pgram, transition, 10,
-      initial_path);
+      initial_path, true, score);
 
   for(unsigned int i = 0; i < path.size(); ++i)
     std::cout<<path[i]<<" ";
   std::cout<<std::endl;
+  std::cout<<score<<std::endl;
 
   return 0;
 }

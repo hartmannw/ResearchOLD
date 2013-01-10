@@ -29,12 +29,13 @@ std::vector<int> FindBestPath(const utilities::Matrix<double> &pgram,
     const utilities::Matrix<double> &transition, int min_frames);
 
 std::vector<int> FindViterbiPath(const utilities::Matrix<double> &pgram,         
-    const utilities::Matrix<double> &transition, int min_frames);
+    const utilities::Matrix<double> &transition, int min_frames, 
+    double &final_score);
 
 std::vector<int> FindRestrictedViterbiPath(                                      
     const utilities::Matrix<double> &pgram,                                      
     const utilities::Matrix<double> &transition, int min_frames,                 
-    std::vector<int> initial_path);
+    std::vector<int> initial_path, bool force_align, double &final_score);
 
 double GetStateScore(const utilities::Matrix<double> &pgram,                     
     const std::vector<int> &initial_path, int min_frames, int state, int frame);
@@ -45,7 +46,8 @@ double GetTransitionScore(const utilities::Matrix<double> &transition,
 
 std::vector<int> BestPathInDpMatrix(
     const utilities::Matrix<ViterbiInfo> &dp_matrix, unsigned int min_frames,
-    const std::vector<int> &initial_path);
+    const std::vector<int> &initial_path, bool force_align, 
+    double &final_score);
 
 }
 

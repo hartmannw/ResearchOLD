@@ -91,16 +91,19 @@ std::vector<int> FindBestPath(const utilities::Matrix<double> &pgram,
       std::string("dp1.pgm"));
 
   std::vector<int> initial_path; 
-  return BestPathInDpMatrix(dp_matrix, min_frames, initial_path);
+  double final_score;
+  return BestPathInDpMatrix(dp_matrix, min_frames, initial_path, false, 
+      final_score);
 }
 
 std::vector<int> FindViterbiPath(const utilities::Matrix<double> &pgram,
-    const utilities::Matrix<double> &transition, int min_frames)
+    const utilities::Matrix<double> &transition, int min_frames, 
+    double &final_score)
 {
   std::vector<int> initial_path;
   initial_path.resize(0); // Make sure the path is of size 0.
   return FindRestrictedViterbiPath(pgram , transition, min_frames, 
-      initial_path);
+      initial_path, false, final_score);
 }
 
 // The number of states in the dynamic programming matrix is expanded by the 
@@ -110,7 +113,7 @@ std::vector<int> FindViterbiPath(const utilities::Matrix<double> &pgram,
 std::vector<int> FindRestrictedViterbiPath(
     const utilities::Matrix<double> &pgram,
     const utilities::Matrix<double> &transition, int min_frames, 
-    std::vector<int> initial_path)
+    std::vector<int> initial_path, bool force_align, double &final_score)
 {
   std::vector<int> path; // Final path that we return.
   utilities::Matrix<ViterbiInfo> dp_matrix; // Holds the memoization data.
@@ -198,29 +201,35 @@ std::vector<int> FindRestrictedViterbiPath(
   fileutilities::WriteBinaryPGM(score.GetVectorOfVectors(), 
       std::string("dp2.pgm"));
   
-  return BestPathInDpMatrix(dp_matrix, min_frames, initial_path);
+  return BestPathInDpMatrix(dp_matrix, min_frames, initial_path, force_align, 
+      final_score);
 }
 
 
 std::vector<int> BestPathInDpMatrix(
     const utilities::Matrix<ViterbiInfo> &dp_matrix, unsigned int min_frames, 
-    const std::vector<int> &initial_path)
+    const std::vector<int> &initial_path, bool force_align, double &final_score)
 {
   std::vector<int> ret;
   unsigned int states = dp_matrix.NumRows();
   unsigned int frames = dp_matrix.NumCols();
 
   // Find the ending point
-  ViterbiInfo endpoint = dp_matrix(initial_path.size() + min_frames-1, 
-      frames-1);
-  endpoint.parent = initial_path.size() + min_frames-1;
-  for(unsigned int s = endpoint.parent; s < states; s+=min_frames)
-    if( dp_matrix(s, frames-1).score > endpoint.score)
-    {
-      endpoint.parent = s;
-      endpoint.score = dp_matrix(s, frames-1).score;
-    }
-  
+  int last_index = std::max(static_cast<int>(initial_path.size())-1, 0);
+  last_index = (last_index * min_frames) + min_frames - 1;
+  std::cout<<last_index<<std::endl;
+  ViterbiInfo endpoint = dp_matrix( last_index, frames-1);
+  endpoint.parent = last_index;
+  if(!force_align) // Final state is not necessarily part of initial_path.
+  {
+    for(unsigned int s = last_index; s < states; s+=min_frames)
+      if( dp_matrix(s, frames-1).score > endpoint.score)
+      {
+        endpoint.parent = s;
+        endpoint.score = dp_matrix(s, frames-1).score;
+      }
+  }
+  final_score = endpoint.score; 
   int last = -1;
   for(int f = frames-1; f >= 0; --f)
   {
