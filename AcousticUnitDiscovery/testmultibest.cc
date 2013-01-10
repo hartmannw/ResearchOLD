@@ -22,6 +22,9 @@ int main()
   transition = acousticunitdiscovery::GenerateTransitionMatrix(100, 0.5);
   utilities::Matrix<double> pgram = sf.record(0);
   pgram.Transpose();
+  std::vector<utilities::Matrix<double> > pgram_set;
+  pgram_set.push_back(pgram);
+  pgram_set.push_back(pgram);
 
   //PrintVector(pgram.GetCol(4));
   //PrintVector(pgram.GetCol(5));
@@ -54,5 +57,12 @@ int main()
   std::cout<<std::endl;
   std::cout<<score<<std::endl;
 
+  path = acousticunitdiscovery::ApproximateViterbiSet(pgram_set, transition, 
+      10);
+
+  for(unsigned int i = 0; i < path.size(); ++i)
+    std::cout<<path[i]<<" ";
+  std::cout<<std::endl;
+  
   return 0;
 }

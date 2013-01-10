@@ -205,6 +205,68 @@ std::vector<int> FindRestrictedViterbiPath(
       final_score);
 }
 
+std::vector<int> ApproximateViterbiSet(                                          
+    const std::vector<utilities::Matrix<double> > &pgram_set,                    
+    const utilities::Matrix<double> &transition, int min_frames)
+{
+  std::vector<int> ret;
+  double zero_log = -1000000;
+  utilities::Matrix<ViterbiInfo> dp_matrix;
+  std::vector<ViterbiInfo> end_point;
+  ViterbiInfo default_point;
+  default_point.parent = -1;
+  default_point.score = zero_log;
+  int states = pgram_set[0].NumRows();
+
+  int frames = pgram_set[0].NumCols();
+  for(unsigned int i = 1; i < pgram_set.size(); ++i)
+    if(static_cast<int>(pgram_set[i].NumCols()) < frames)
+      frames = pgram_set[i].NumCols();
+  frames = std::floor( static_cast<double>(frames) / 
+      static_cast<double>(min_frames));
+  end_point.resize(frames, default_point);
+  dp_matrix.Initialize(states, frames, default_point);
+
+  for(int f = 1; f < frames; ++f)
+  {
+    for(int s = 0; s < states; ++s)
+    {
+      for(int p = 0; p < states; ++p)
+      {
+        if( p != s)
+        {
+          std::vector<int> initial_path = BestSubPathInViterbiSet(dp_matrix, p, 
+              f-1);
+          initial_path.push_back(p);
+          initial_path.push_back(s);
+          double score = 0, final_score = 0;
+          for(unsigned int i = 0; i < pgram_set.size(); ++i)
+          {
+            FindRestrictedViterbiPath(pgram_set[i], transition, min_frames, 
+                initial_path, false, score);
+            final_score += score;
+          }
+          final_score = final_score / pgram_set.size();
+          std::cout<<f<<" "<<s<<" "<<p<<" "<<final_score<<std::endl;
+        }
+      } // end for p
+    } // end for s
+  } // end for f
+  return ret;
+}
+
+std::vector<int> BestSubPathInViterbiSet(
+    const utilities::Matrix<ViterbiInfo> &dp_matrix, int state, int frame)
+{
+  std::vector<int> ret;
+  while(dp_matrix(state, frame).parent > 0)
+  {
+    state = dp_matrix(state, frame).parent;
+    ret.push_back(state);
+    --frame;
+  }
+  return ret;
+}
 
 std::vector<int> BestPathInDpMatrix(
     const utilities::Matrix<ViterbiInfo> &dp_matrix, unsigned int min_frames, 
@@ -217,7 +279,6 @@ std::vector<int> BestPathInDpMatrix(
   // Find the ending point
   int last_index = std::max(static_cast<int>(initial_path.size())-1, 0);
   last_index = (last_index * min_frames) + min_frames - 1;
-  std::cout<<last_index<<std::endl;
   ViterbiInfo endpoint = dp_matrix( last_index, frames-1);
   endpoint.parent = last_index;
   if(!force_align) // Final state is not necessarily part of initial_path.
