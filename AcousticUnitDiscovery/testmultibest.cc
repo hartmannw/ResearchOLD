@@ -16,19 +16,18 @@ int main()
   std::string fname;
   fileutilities::SpeechFeatures sf; 
   fname = "example1.pgram";
+  int min_frames = 5;
 
   sf.ReadHtkFile(fname);
   utilities::Matrix<double> transition;
   transition = acousticunitdiscovery::GenerateTransitionMatrix(100, 0.5);
   utilities::Matrix<double> pgram = sf.frames(0, 201, 300);
   //utilities::Matrix<double> pgram = sf.record(0);
-  pgram.Initialize(pgram.NumRows(), 50);
+  pgram.Initialize(pgram.NumRows(), 20);
   pgram.Transpose();
   std::vector<utilities::Matrix<double> > pgram_set;
-  pgram_set.push_back(pgram);
-  pgram_set.push_back(pgram);
 
-  PrintVector(pgram.GetCol(4));
+  //PrintVector(pgram.GetCol(4));
   //PrintVector(pgram.GetCol(5));
   //PrintVector(pgram.GetCol(6));
 
@@ -36,9 +35,10 @@ int main()
   for(unsigned int r = 0; r < pgram.NumRows(); ++r)
     for(unsigned int c = 0; c < pgram.NumCols(); ++c)
       pgram(r,c) = std::log(pgram(r,c));
+  pgram_set.push_back(pgram);
 
   std::vector<int> path = 
-    acousticunitdiscovery::FindBestPath(pgram, transition, 10);
+    acousticunitdiscovery::FindBestPath(pgram, transition, min_frames);
 
   for(unsigned int i = 0; i < path.size(); ++i)
     std::cout<<path[i]<<" ";
@@ -46,13 +46,13 @@ int main()
   std::cout<<path.size()<<std::endl;
   
   std::vector<int> initial_path;
-  initial_path.push_back(51);
-  initial_path.push_back(17);
-  initial_path.push_back(19);
+  //initial_path.push_back(3);
+  //initial_path.push_back(15);
+  //initial_path.push_back(16);
 
   double score;
-  path = acousticunitdiscovery::FindRestrictedViterbiPath(pgram, transition, 10,
-      initial_path, true, score);
+  path = acousticunitdiscovery::FindRestrictedViterbiPath(pgram, transition, 
+      min_frames, initial_path, false, score);
 
   for(unsigned int i = 0; i < path.size(); ++i)
     std::cout<<path[i]<<" ";
@@ -60,7 +60,7 @@ int main()
   std::cout<<score<<std::endl;
 
   path = acousticunitdiscovery::ApproximateViterbiSet(pgram_set, transition, 
-      10);
+      min_frames);
 
   for(unsigned int i = 0; i < path.size(); ++i)
     std::cout<<path[i]<<" ";
