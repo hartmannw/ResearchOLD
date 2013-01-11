@@ -20,13 +20,15 @@ int main()
   sf.ReadHtkFile(fname);
   utilities::Matrix<double> transition;
   transition = acousticunitdiscovery::GenerateTransitionMatrix(100, 0.5);
-  utilities::Matrix<double> pgram = sf.record(0);
+  utilities::Matrix<double> pgram = sf.frames(0, 201, 300);
+  //utilities::Matrix<double> pgram = sf.record(0);
+  pgram.Initialize(pgram.NumRows(), 50);
   pgram.Transpose();
   std::vector<utilities::Matrix<double> > pgram_set;
   pgram_set.push_back(pgram);
   pgram_set.push_back(pgram);
 
-  //PrintVector(pgram.GetCol(4));
+  PrintVector(pgram.GetCol(4));
   //PrintVector(pgram.GetCol(5));
   //PrintVector(pgram.GetCol(6));
 
