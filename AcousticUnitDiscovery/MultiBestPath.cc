@@ -157,7 +157,7 @@ std::vector<int> FindRestrictedViterbiPath(
       best_point.score = dp_matrix(s, f-1).score + std::max(
           GetTransitionScore(transition, initial_path, min_frames, s, s),
           zero_log);
-      if( (s < (initial_path.size() * min_frames) - 1) || // Still initial path
+      if( (s < (initial_path.size() * min_frames) ) || // Still initial path
           (s % min_frames > 0) ) // Transition within the set of substates.
       { // Only self loop and immediately previous state are valid.
         if(s > 0) // Can only come from the immediately preceeding state if one
@@ -174,7 +174,10 @@ std::vector<int> FindRestrictedViterbiPath(
       }
       else
       {
-        for(unsigned int p = (min_frames - 1); p < states; p+=min_frames)
+        unsigned int first_parent = min_frames - 1;
+        if(initial_path.size() > 0)
+          first_parent += ( (initial_path.size() - 1) * min_frames);
+        for(unsigned int p = first_parent; p < states; p+=min_frames)
         {
           double score = dp_matrix(p, f-1).score + std::max(
               GetTransitionScore(transition, initial_path, min_frames, p, s),
@@ -193,14 +196,16 @@ std::vector<int> FindRestrictedViterbiPath(
     } // end for s
   } // end for f
 
+/*
   utilities::Matrix<double> score;
   score.Initialize(dp_matrix.NumRows(), dp_matrix.NumCols());
   for(unsigned int r = 0; r < score.NumRows(); ++r)
     for(unsigned int c = 0; c < score.NumCols(); ++c)
-      score(r,c) = 1 + std::max(dp_matrix(r,c).parent, -1000);
+      score(r,c) = -1 * std::max(dp_matrix(r,c).score, -1000.0);
   fileutilities::WriteBinaryPGM(score.GetVectorOfVectors(), 
       std::string("dp2.pgm"));
-  
+*/
+
   return BestPathInDpMatrix(dp_matrix, min_frames, initial_path, force_align, 
       final_score);
 }
@@ -247,11 +252,55 @@ std::vector<int> ApproximateViterbiSet(
             final_score += score;
           }
           final_score = final_score / pgram_set.size();
-          std::cout<<f<<" "<<s<<" "<<p<<" "<<final_score<<std::endl;
+          if(final_score > dp_matrix(s, f).score)
+          {
+            dp_matrix(s, f).score = final_score;
+            dp_matrix(s, f).parent = p;
+            //std::cout<<f<<" "<<s<<" "<<p<<" "<<final_score<<std::endl;
+          }
         }
       } // end for p
     } // end for s
+    // Now check for the best path that exits at this point.
+    for( int p = 0; p < states; ++p)
+    {
+      std::vector<int> initial_path = BestSubPathInViterbiSet(dp_matrix, p, 
+          f-1);
+      initial_path.push_back(p);
+      double score = 0, final_score = 0;
+      for(unsigned int i = 0; i < pgram_set.size(); ++i)
+      {
+        FindRestrictedViterbiPath(pgram_set[i], transition, min_frames, 
+            initial_path, true, score);
+        final_score += score;
+      }
+      final_score = final_score / pgram_set.size();
+      if(final_score > end_point[f].score)
+      {
+        end_point[f].score = final_score;
+        end_point[f].parent = p;
+        //std::cout<<f<<" Exit "<<p<<" "<<final_score<<std::endl;
+      }
+    }// end for p
+    // Display best exit path for testing purposes
+    std::vector<int> exit_path = BestSubPathInViterbiSet(dp_matrix, 
+        end_point[f].parent, f-1);
+    exit_path.push_back(end_point[f].parent);
+    std::cout<<"Exit path ("<<end_point[f].score<<"): ";
+    for(unsigned int i = 0; i < exit_path.size(); ++i)
+      std::cout<<exit_path[i]<<" ";
+    std::cout<<std::endl;
   } // end for f
+
+  double best_index = 0;
+  for(unsigned int i = 1; i < end_point.size(); ++i)
+    if(end_point[i].score > end_point[best_index].score)
+      best_index = i;
+   
+  ret = BestSubPathInViterbiSet(dp_matrix, end_point[best_index].parent,
+      best_index - 1);
+   ret.push_back(end_point[best_index].parent);
+
   return ret;
 }
 
@@ -259,12 +308,13 @@ std::vector<int> BestSubPathInViterbiSet(
     const utilities::Matrix<ViterbiInfo> &dp_matrix, int state, int frame)
 {
   std::vector<int> ret;
-  while(dp_matrix(state, frame).parent > 0)
+  while(dp_matrix(state, frame).parent >= 0)
   {
     state = dp_matrix(state, frame).parent;
     ret.push_back(state);
     --frame;
   }
+  std::reverse(ret.begin(), ret.end());
   return ret;
 }
 
@@ -273,7 +323,7 @@ std::vector<int> BestPathInDpMatrix(
     const std::vector<int> &initial_path, bool force_align, double &final_score)
 {
   std::vector<int> ret;
-  unsigned int states = dp_matrix.NumRows();
+  unsigned int states = dp_matrix.NumRows(); 
   unsigned int frames = dp_matrix.NumCols();
 
   // Find the ending point
@@ -284,13 +334,17 @@ std::vector<int> BestPathInDpMatrix(
   if(!force_align) // Final state is not necessarily part of initial_path.
   {
     for(unsigned int s = last_index; s < states; s+=min_frames)
+    {
+      //std::cout<<s<<": "<<dp_matrix(s,frames-1).score<<std::endl;
       if( dp_matrix(s, frames-1).score > endpoint.score)
       {
         endpoint.parent = s;
         endpoint.score = dp_matrix(s, frames-1).score;
       }
+    }
   }
   final_score = endpoint.score; 
+  //std::cout<<"Endpoint = "<<endpoint.parent<<std::endl;
   int last = -1;
   for(int f = frames-1; f >= 0; --f)
   {
@@ -328,6 +382,7 @@ double GetTransitionScore(const utilities::Matrix<double> &transition,
     const std::vector<int> &initial_path, int min_frames, int from_state,
     int to_state)
 {
+  int initial_length = initial_path.size();
   int true_from_state = std::floor(static_cast<double>(from_state) / 
       static_cast<double>(min_frames));
   int from_substate = from_state % min_frames;
@@ -345,7 +400,8 @@ double GetTransitionScore(const utilities::Matrix<double> &transition,
     true_to_state -= initial_path.size();
 
   // First handle transition logic if we are inside the restricted path
-  if( (to_state < (min_frames * 3)) || (from_state < ( (min_frames*3) -1)) )
+  if( (to_state < (min_frames * initial_length)) || 
+      (from_state < ((initial_length-1) * min_frames)) )
   {
     if( (to_state == from_state) || (to_state == (from_state+1)) )
       return transition(true_from_state, true_to_state);
