@@ -11,7 +11,8 @@ TestDTW: DynamicTimeWarp.o testdtw.cc
 
 TestMultiBest: MultiBestPath.o
 	$(CC) $(CFLAGS) $(INCLUDE) -o testmulti MultiBestPath.o testmultibest.cc \
-  	../FileUtilities/SpeechFeatures.o ../Utilities/Matrix.o 
+  	../FileUtilities/SpeechFeatures.o ../Utilities/Matrix.o \
+		../FileUtilities/ImageIO.o
 
 DynamicTimeWarp.o: DynamicTimeWarp.cc DynamicTimeWarp.h
 	$(CC) $(CFLAGS) $(INCLUDE) -c DynamicTimeWarp.cc

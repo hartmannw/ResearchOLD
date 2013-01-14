@@ -181,7 +181,7 @@ utilities::Matrix<double> SpeechFeatures::frames(int record, int start,
   ret.Initialize(numRows, feature_width_);
   for(int f = 0; f < numRows; ++f)
     for(int c = 0; c < feature_width_; ++c)
-      ret(f, c) = features_[record](f+start, end);
+      ret(f, c) = features_[record](f+start, c);
   return ret;
 }
 
