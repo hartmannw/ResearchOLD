@@ -10,7 +10,7 @@ void HmmSet::LoadHtkHmmSet(std::string filename)
 {
   std::ifstream fin(filename.c_str(), std::ios::in);
   std::string line;
-  std::cout<<filename<<std::endl;
+  //std::cout<<filename<<std::endl;
 
   while(FindHtkModelHeader(fin, line)) // For each HMM in the file.
   {
@@ -55,7 +55,7 @@ unsigned int HmmSet::LoadSingleHtkState(std::ifstream &fin, std::string &line,
   {
     name = line.substr(4, line.length()-5);
     getline(fin, line);
-    std::cout<<mixture_index_[name]<<std::endl;
+    //std::cout<<mixture_index_[name]<<std::endl;
     return mixture_index_[name];
   }
   else
@@ -96,7 +96,7 @@ bool HmmSet::LoadSingleHtkHmm(std::ifstream &fin, std::string &line)
 {
   // Assume we begin by looking at the ~h line
   std::string name = line.substr(4, line.length()-5);
-  std::cout<<name<<std::endl;
+  //std::cout<<name<<std::endl;
   HiddenMarkovModel hmm;
   hmm.SetName(name);
   getline(fin, line); // BEGINHMM
@@ -111,7 +111,7 @@ bool HmmSet::LoadSingleHtkHmm(std::ifstream &fin, std::string &line)
     if( line.find("<STATE>") > line.length())
       return false;
     std::string state_name = name + std::string("_") + utilities::ToString(i);
-    std::cout<<state_name<<std::endl;
+    //std::cout<<state_name<<std::endl;
     getline(fin, line);
     hmm.AddState( LoadSingleHtkState(fin, line, state_name));
   }

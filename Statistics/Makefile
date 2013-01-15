@@ -1,29 +1,23 @@
 CC=g++
-CFLAGS=-Wall -O0
+CFLAGS=-Wall -O0 -g
 INCLUDE=-I../Utilities/ \
     -I../FileUtilities/
 
-all: GaussianPosteriorgram AveragePosteriorgram
+all: test_posteriorgram
 
-GaussianPosteriorgram: HmmSet.o MixtureOfDiagonalGaussians.o GaussianPosteriorgram.cc
-	$(CC) $(CFLAGS) $(INCLUDE) -o GaussianPosteriorgram \
+test_posteriorgram: HmmSet.o MixtureOfDiagonalGaussians.o \
+	../Utilities/Matrix.o PosteriorgramGenerator.o test_posteriorgram.cc
+	$(CC) $(CFLAGS) $(INCLUDE) -o test_posteriorgram \
     DiagonalGaussian.o MixtureOfDiagonalGaussians.o HmmSet.o \
-    ../Utilities/StringFunctions.o \
+    ../Utilities/StringFunctions.o PosteriorgramGenerator.o \
     ../FileUtilities/ImageIO.o ../FileUtilities/SpeechFeatures.o \
-    GaussianPosteriorgram.cc
-
-AveragePosteriorgram: HmmSet.o MixtureOfDiagonalGaussians.o AveragePosteriorgram.cc
-	$(CC) $(CFLAGS) $(INCLUDE) -o AveragePosteriorgram \
-    DiagonalGaussian.o MixtureOfDiagonalGaussians.o HmmSet.o \
-    ../Utilities/StringFunctions.o \
-    ../FileUtilities/ImageIO.o ../FileUtilities/SpeechFeatures.o \
-    AveragePosteriorgram.cc
+    test_posteriorgram.cc
 
 DiagonalGaussian.o: DiagonalGaussian.cc DiagonalGaussian.h
 	$(CC) $(CFLAGS) $(INCLUDE) -c DiagonalGaussian.cc
 
 MixtureOfDiagonalGaussians.o: MixtureOfDiagonalGaussians.cc \
-    MixtureOfDiagonalGaussians.h DiagonalGaussian.o
+  MixtureOfDiagonalGaussians.h DiagonalGaussian.o
 	$(CC) $(CFLAGS) $(INCLUDE) -c MixtureOfDiagonalGaussians.cc
 
 HiddenMarkovModel.o: HiddenMarkovModel.cc HiddenMarkovModel.h
@@ -32,5 +26,9 @@ HiddenMarkovModel.o: HiddenMarkovModel.cc HiddenMarkovModel.h
 HmmSet.o: HmmSet.cc HmmSet.h HiddenMarkovModel.o MixtureOfDiagonalGaussians.o 
 	$(CC) $(CFLAGS) $(INCLUDE) -c HmmSet.cc
 
+PosteriorgramGenerator.o: MixtureOfDiagonalGaussians.o ../Utilities/Matrix.o \
+	PosteriorgramGenerator.h PosteriorgramGenerator.cc
+	$(CC) $(CFLAGS) $(INCLUDE) -c PosteriorgramGenerator.cc
+
 clean:
-	rm *.o GaussianPosteriorgram AveragePosteriorgram
+	rm *.o test_posteriorgram

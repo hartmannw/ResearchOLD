@@ -1,5 +1,5 @@
 CC=g++
-CFLAGS=-Wall -O2
+CFLAGS=-Wall -O0 -g
 
 all: TestMatrix Matrix.o StringFunctions.o MatrixFunctions.o
 

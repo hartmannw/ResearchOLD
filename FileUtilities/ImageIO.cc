@@ -11,7 +11,7 @@ bool WritePlainPGM(const std::vector< std::vector<double> > &image,
     const unsigned int &max, const std::string &filename)
 {
   double rangemax= std::numeric_limits<double>::min();
-  double rangemin= std::numeric_limits<double>::max(), range=0;
+  double rangemin= std::numeric_limits<double>::max();
   int value;
   std::vector< std::vector<double> >::const_iterator rit;
   std::vector< double>::const_iterator cit;
@@ -26,7 +26,7 @@ bool WritePlainPGM(const std::vector< std::vector<double> > &image,
         rangemin = *cit;
     }
 
-  range = rangemax - rangemin;
+  //range = rangemax - rangemin;
 
   std::ofstream fout;
   fout.open(filename.c_str(), std::ios::out);
@@ -56,7 +56,7 @@ bool WriteBinaryPGM(const std::vector< std::vector<double> > &image,
 {
   unsigned int max = 255; // Standard binary PGM uses 8 bits per pixel.
   double rangemax= std::numeric_limits<double>::min();
-  double rangemin= std::numeric_limits<double>::max(), range=0;
+  double rangemin= std::numeric_limits<double>::max();
   unsigned char value;
   std::vector< std::vector<double> >::const_iterator rit;
   std::vector< double>::const_iterator cit;
@@ -71,7 +71,7 @@ bool WriteBinaryPGM(const std::vector< std::vector<double> > &image,
         rangemin = *cit;
     }
 
-  range = rangemax - rangemin;
+  //range = rangemax - rangemin;
 
   std::ofstream fout;
   fout.open(filename.c_str(), std::ios::out);

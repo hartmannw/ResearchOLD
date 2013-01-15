@@ -1,5 +1,5 @@
 CC=g++
-CFLAGS=-Wall
+CFLAGS=-Wall -O0 -g
 INCLUDE=-I../Utilities/ 
 
 all: Test ConvertCep2Ascii ConvertCep2Htk ImageIO.o

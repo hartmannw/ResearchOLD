@@ -81,7 +81,10 @@ bool Matrix<T>::Initialize(unsigned int rows, unsigned int cols, T value)
   rows_ = rows;
   cols_ = cols;
   matrix_.clear();
-  matrix_.resize(rows * cols, value);
+
+  matrix_.resize(rows * cols);
+  for(unsigned int i = 0; i < matrix_.size(); ++i)
+    matrix_[i] = value;
   return true;
 }
 
