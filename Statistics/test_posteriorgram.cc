@@ -25,7 +25,7 @@ int main()
   fileutilities::WriteBinaryPGM(similarity_matrix.GetVectorOfVectors(), 
       std::string("simmx.pgm") );
 
-  filename = "/people/hartmann/research/AASP_CASA/data/SceneClassification/scenes_stereo/bus01.mfccmvn";
+  filename = "/people/hartmann/research/AASP_CASA/data/SceneClassification/scenes_stereo/bus02.mfccmvn";
   fileutilities::SpeechFeatures sf;
   sf.ReadHtkFile(filename);
   utilities::Matrix<double> data = sf.record(0);

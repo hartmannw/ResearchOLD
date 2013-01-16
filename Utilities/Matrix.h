@@ -236,14 +236,16 @@ bool Matrix<T>::SetDiagonal(T value)
 template<class T>
 bool Matrix<T>::Transpose()
 {
+  std::vector<T> new_matrix = matrix_;
   for(unsigned int r = 0; r < rows_; ++r)
-    for(unsigned int c = r+1; c < cols_; ++c)
+    for(unsigned int c = 0; c < cols_; ++c)
     {
       unsigned int index = (r * cols_) + c;
-      unsigned int transpose = (c * cols_) + r;
-      std::swap(matrix_[index], matrix_[transpose]);
+      unsigned int transpose = (c * rows_) + r;
+      new_matrix[transpose] = matrix_[index];
     }
   std::swap(rows_, cols_);
+  matrix_ = new_matrix;
   return true;
 }
 

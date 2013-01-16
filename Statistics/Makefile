@@ -1,5 +1,5 @@
 CC=g++
-CFLAGS=-Wall -O0 -g
+CFLAGS=-Wall -O2
 INCLUDE=-I../Utilities/ \
     -I../FileUtilities/
 
