@@ -25,7 +25,7 @@ int main()
   fileutilities::WriteBinaryPGM(similarity_matrix.GetVectorOfVectors(), 
       std::string("simmx.pgm") );
 
-  filename = "/people/hartmann/research/AASP_CASA/data/SceneClassification/scenes_stereo/park01.mfccmvn";
+  filename = "/people/hartmann/research/AASP_CASA/data/SceneClassification/scenes_stereo/bus01.mfccmvn";
   fileutilities::SpeechFeatures sf;
   sf.ReadHtkFile(filename);
   utilities::Matrix<double> data = sf.record(0);
@@ -39,7 +39,7 @@ int main()
   for(unsigned int i = 0; i < names.size(); ++i)
     std::cout<<i<<" "<<names[i][0]<<std::endl;
 
-  std::vector< std::pair<int, int> > posterior_count = pg.BestIndexCount(pgram);
+  std::vector< std::pair<int, double> > posterior_count = pg.BestIndexMass(pgram);
   for(unsigned int i = 0; i < posterior_count.size(); ++i)
     std::cout<<posterior_count[i].first<<" "<<posterior_count[i].second<<
         std::endl;
