@@ -19,14 +19,74 @@
 #include "HmmSet.h"
 #include "MultiBestPath.h"
 
+std::vector<int> ReadVector(std::string filename)
+{
+  std::vector<int> ret;
+  std::ifstream fin;
+  fin.open(filename.c_str(), std::ios::in);
+  while(fin.good())
+  {
+    double n;
+    fin >> n;
+    ret.push_back(static_cast<int>(n)-1);
+  }
+  ret.resize( ret.size() - 1 );
+  return ret;
+}
+
+int GroupStatesByIndex(const std::vector<std::vector<std::string> > &original_names,
+  std::vector<int> &index, std::vector<std::string> &names, std::string idxfile)
+{
+  int total = 0;
+  index = ReadVector(idxfile);
+  for(unsigned int i = 0; i < index.size(); ++i)
+    if( index[i] > total)
+      total = index[i];
+  total++;
+  names.resize(total);
+
+  for(unsigned int i = 0; i < index.size(); ++i)
+    names[index[i]] += original_names[i][0];
+  return total;
+}
+
+int GroupStatesByName(const std::vector<std::vector<std::string> > &original_names,
+  std::vector<int> &index, std::vector<std::string> &names)
+{
+  int total = 0;
+  index.resize(original_names.size());
+  names.resize(0);
+  for(unsigned int i = 0; i < index.size(); ++i)
+  {
+    std::vector<std::string> tokens;
+    utilities::TokenizeString(original_names[i][0], '_', tokens);
+    int token_id = -1;
+    for(unsigned int j = 0; j < names.size(); ++j)
+      if(names[j] == tokens[0])
+        token_id = j;
+
+    if(token_id < 0)
+    {
+      index[i] = total;
+      names.push_back(tokens[0]);
+      ++total;
+    }
+    else
+    {
+      index[i] = token_id;
+    }
+  }
+  return total;
+}
+
 int main()
 {
-  std::string listfile("/people/hartmann/research/SegmentalModel/tidigit_exp/word_locations/one.train.list");
+  std::string listfile("/people/hartmann/research/SegmentalModel/tidigit_exp/word_locations/eight.train.list");
   std::string suffix(".htk");
   std::string maindir("/people/hartmann/research/SegmentalModel/tidigit_exp/");
-  std::string hmmfile("/people/hartmann/research/SegmentalModel/tidigit_exp/hmm_plp_phone/hmm29/hmmdefs");
-  int maximum_examples = 10;
-  int min_frames = 3;
+  std::string hmmfile("/people/hartmann/research/SegmentalModel/tidigit_exp/hmm_plp_grapheme00/hmm29/hmmdefs");
+  int maximum_examples = 20;
+  int min_frames = 4;
   int examples = 0;
   std::ifstream fin;
 
@@ -44,9 +104,30 @@ int main()
   std::vector<std::vector<std::string> > names = htk.mixture_names();            
   std::vector<utilities::Matrix<double> > pgram_set;                            
   statistics::PosteriorgramGenerator pg;                                         
-  pg.SetGaussians(mog);
-  utilities::Matrix<double> transition;                                          
-  transition = acousticunitdiscovery::GenerateTransitionMatrix(mog.size(), 0.9);
+  utilities::Matrix<double> transition;
+  std::vector<int> group_index;
+  std::vector<std::string> group_name;
+
+  int total_groups = GroupStatesByName(names, group_index, group_name);
+  //int total_groups = GroupStatesByIndex(names, group_index, group_name, 
+  //    std::string("idx_sm.pgm"));
+
+  transition = 
+      acousticunitdiscovery::GenerateTransitionMatrix(total_groups, 0.9);
+  pg.SetGaussians(mog, group_index);
+  //pg.SetGaussians(mog);
+  //utilities::Matrix<double> sm = pg.ComputeSimilarityMatrix();
+  //for(unsigned int r = 0; r < sm.NumRows(); ++r)
+  //{
+  //  for(unsigned int c = 0; c < sm.NumCols(); ++c)
+  //    std::cout<<sm(r,c)<<" ";
+  //  std::cout<<"\n";
+  //}
+
+  std::cout<<total_groups<<std::endl;
+  for(unsigned int i = 0; i < group_name.size(); ++i)
+    std::cout<<group_name[i]<<std::endl;
+
 
   while(fin.good() && examples < maximum_examples)
   {
@@ -75,7 +156,7 @@ int main()
       std::vector<int> path =                                                        
           acousticunitdiscovery::FindBestPath(pgram, transition, min_frames);   
       for(unsigned int i = 0; i < path.size(); ++i)
-        std::cout<<names[path[i]][0]<<" ";
+        std::cout<<group_name[path[i]]<<" ";
       std::cout<<"\n";
     }
     ++examples;
@@ -86,7 +167,7 @@ int main()
       acousticunitdiscovery::ApproximateViterbiSet(pgram_set, transition,     
       min_frames);
   for(unsigned int i = 0; i < path.size(); ++i)
-    std::cout<<names[path[i]][0]<<" ";
+    std::cout<<group_name[path[i]]<<" ";
   std::cout<<"\n";
 
   return 0;

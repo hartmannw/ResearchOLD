@@ -62,8 +62,8 @@ utilities::Matrix<double> PosteriorgramGenerator::ComputePosteriorgram(
   int frames = data.NumCols();
   for(unsigned int i = 0; i < posterior_index_.size(); ++i)
     if( posterior_index_[i] > posteriors)
-      posteriors = posterior_index_[i] + 1; // Number of posteriors is the 
-                                            // highest index + 1
+      posteriors = posterior_index_[i]; 
+  posteriors++; // Number of posteriors is the highest index + 1.
   
   ret.Initialize(posteriors, frames, 0);
   for(int f = 0; f < frames; ++f)
