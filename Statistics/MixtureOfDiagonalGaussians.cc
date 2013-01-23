@@ -79,4 +79,13 @@ double MixtureOfDiagonalGaussians::CSDivergence(MixtureOfDiagonalGaussians mog)
   return (first_term + second_term + third_term);
 }
 
+void MixtureOfDiagonalGaussians::NormalizeWeights()
+{
+  double total = 0;
+  for(unsigned int i = 0; i < weight_.size(); ++i)
+    total += weight_[i];
+  for(unsigned int i = 0; i < weight_.size(); ++i)
+    weight_[i] = weight_[i] / total;
+}
+
 }

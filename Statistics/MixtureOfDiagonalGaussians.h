@@ -50,11 +50,14 @@ class MixtureOfDiagonalGaussians
   double CSDivergence(MixtureOfDiagonalGaussians mog);
 
   // Returns number of Gaussians in the mixture.
-  unsigned int components(){return gaussian_.size();}
+  unsigned int components() const {return gaussian_.size();}
 
   // Standard accessor functions.
-  double weight(unsigned int i){return weight_[i];}
-  DiagonalGaussian gaussian(unsigned int i){return gaussian_[i];}
+  double weight(unsigned int i) const {return weight_[i];}
+  DiagonalGaussian gaussian(unsigned int i) const {return gaussian_[i];}
+
+  // Renormalizes the weight vector so that the weights sum to one.
+  void NormalizeWeights();
  
 };
 

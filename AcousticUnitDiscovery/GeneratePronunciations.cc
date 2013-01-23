@@ -79,14 +79,38 @@ int GroupStatesByName(const std::vector<std::vector<std::string> > &original_nam
   return total;
 }
 
+std::vector<statistics::MixtureOfDiagonalGaussians> GroupMixturesByIndex( 
+    const std::vector<statistics::MixtureOfDiagonalGaussians> &gmm,
+    const std::vector<int> &index)
+{
+  std::vector<statistics::MixtureOfDiagonalGaussians> ret;
+
+  // Find the total number of groups. 
+  int total_groups = 0;
+  for(unsigned int i = 0; i < index.size(); ++i)
+    if(index[i] > total_groups)
+      total_groups = index[i];
+  total_groups++;
+  ret.resize(total_groups);
+
+  for(unsigned int i = 0; i < index.size(); ++i)
+    for(unsigned int g = 0; g < gmm[i].components(); ++g)
+      ret[ index[i] ].AddGaussian(gmm[i].gaussian(g), gmm[i].weight(g));
+
+  for(unsigned int i = 0; i < ret.size(); ++i)
+    ret[i].NormalizeWeights();
+
+  return ret;
+}
+
 int main()
 {
   std::string listfile("/people/hartmann/research/SegmentalModel/tidigit_exp/word_locations/eight.train.list");
   std::string suffix(".htk");
   std::string maindir("/people/hartmann/research/SegmentalModel/tidigit_exp/");
-  std::string hmmfile("/people/hartmann/research/SegmentalModel/tidigit_exp/hmm_plp_grapheme00/hmm29/hmmdefs");
+  std::string hmmfile("/people/hartmann/research/SegmentalModel/tidigit_exp/hmm_plp_grapheme11/hmm29/hmmdefs");
   int maximum_examples = 20;
-  int min_frames = 4;
+  int min_frames = 3;
   int examples = 0;
   std::ifstream fin;
 
@@ -109,20 +133,21 @@ int main()
   std::vector<std::string> group_name;
 
   int total_groups = GroupStatesByName(names, group_index, group_name);
+  mog = GroupMixturesByIndex(mog, group_index);
   //int total_groups = GroupStatesByIndex(names, group_index, group_name, 
   //    std::string("idx_sm.pgm"));
 
   transition = 
       acousticunitdiscovery::GenerateTransitionMatrix(total_groups, 0.9);
-  pg.SetGaussians(mog, group_index);
-  //pg.SetGaussians(mog);
-  //utilities::Matrix<double> sm = pg.ComputeSimilarityMatrix();
-  //for(unsigned int r = 0; r < sm.NumRows(); ++r)
-  //{
-  //  for(unsigned int c = 0; c < sm.NumCols(); ++c)
-  //    std::cout<<sm(r,c)<<" ";
-  //  std::cout<<"\n";
-  //}
+  //pg.SetGaussians(mog, group_index);
+  pg.SetGaussians(mog);
+  utilities::Matrix<double> sm = pg.ComputeSimilarityMatrix();
+  for(unsigned int r = 0; r < sm.NumRows(); ++r)
+  {
+    for(unsigned int c = 0; c < sm.NumCols(); ++c)
+      std::cout<<sm(r,c)<<" ";
+    std::cout<<"\n";
+  }
 
   std::cout<<total_groups<<std::endl;
   for(unsigned int i = 0; i < group_name.size(); ++i)
