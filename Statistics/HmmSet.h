@@ -26,6 +26,8 @@ class HmmSet
  private:
   // Allows a MOG to be accessed by name instead of ID.
   std::map<std::string, unsigned int> mixture_index_;
+  // Allows an HMM to be accessed by name instead of ID.
+  std::map<std::string, unsigned int> hmm_index_;
 
   // Since it is common to share MOGs across different states in different HMMs,
   // we store them all together.
@@ -51,8 +53,10 @@ class HmmSet
   void LoadHtkHmmSet(std::string filename);
 
   // Standard accessor functions.
+  std::vector<HiddenMarkovModel> hmms() { return hmms_; }
   std::vector<MixtureOfDiagonalGaussians> states(){return states_;}
   std::vector<std::vector<std::string> > mixture_names();
+  HiddenMarkovModel Hmm(std::string name) { return hmms_[ hmm_index_[name] ];}
 
 };
 

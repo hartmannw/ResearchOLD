@@ -234,6 +234,8 @@ std::vector<int> ApproximateViterbiSet(
       frames = pgram_set[i].NumCols();
   frames = std::floor( static_cast<double>(frames) / 
       static_cast<double>(min_frames));
+  if(frames < 2)
+    frames = 2;
 
   // end_point[i] will contain a pointer to the best path that contains i 
   // labels.
@@ -289,6 +291,7 @@ std::vector<int> ApproximateViterbiSet(
       }
     }// end for p
     // Display best exit path for testing purposes DELETE
+    /*
     std::vector<int> exit_path = BestSubPathInViterbiSet(dp_matrix, 
         end_point[f].parent, f-1);
     exit_path.push_back(end_point[f].parent);
@@ -296,6 +299,7 @@ std::vector<int> ApproximateViterbiSet(
     for(unsigned int i = 0; i < exit_path.size(); ++i)
       std::cout<<exit_path[i]<<" ";
     std::cout<<std::endl;
+    */
     // END DELETE
   } // end for f
 

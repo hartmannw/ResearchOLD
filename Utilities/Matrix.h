@@ -91,12 +91,13 @@ bool Matrix<T>::Initialize(unsigned int rows, unsigned int cols, T value)
 template<class T>
 bool Matrix<T>::Initialize(const std::vector<std::vector<T> > &matrix)
 {
+  matrix_.clear();
   rows_ = matrix.size();
   if( rows_ == 0)
     return Initialize(0, 0);
   cols_ = matrix[0].size();
   matrix_.resize(rows_ * cols_);
-  std::cout<<rows_<<" "<<cols_<<std::endl;
+  //std::cout<<rows_<<" "<<cols_<<std::endl;
   for(unsigned int r = 0; r < rows_; ++r)
   {
     if(matrix[r].size() != cols_) // Each row of the matrix does not have the

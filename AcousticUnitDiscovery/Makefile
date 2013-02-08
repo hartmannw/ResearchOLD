@@ -1,15 +1,23 @@
 CC=g++
-CFLAGS=-Wall -O2
+CFLAGS=-Wall -O2 -std=c++11
 INCLUDE=-I../FileUtilities/ \
 				-I../Utilities/ \
 				-I../Statistics/ 
 
-all: TestDTW TestMultiBest GeneratePronunciations
+all: TestDTW TestMultiBest GeneratePronunciations CreateSimilarityMatrix
 
 GeneratePronunciations: GeneratePronunciations.cc
 	$(CC) $(CFLAGS) $(INCLUDE) -o GeneratePronunciations \
 	GeneratePronunciations.cc ../FileUtilities/SpeechFeatures.o \
 	../Utilities/Matrix.o ../Utilities/StringFunctions.o MultiBestPath.o \
+	../Statistics/HmmSet.o ../FileUtilities/ImageIO.o \
+	../Statistics/DiagonalGaussian.o ../Statistics/MixtureOfDiagonalGaussians.o \
+	../Statistics/PosteriorgramGenerator.o
+
+CreateSimilarityMatrix: CreateSimilarityMatrix.cc
+	$(CC) $(CFLAGS) $(INCLUDE) -o CreateSimilarityMatrix \
+	CreateSimilarityMatrix.cc \
+	../Utilities/Matrix.o ../Utilities/StringFunctions.o \
 	../Statistics/HmmSet.o ../FileUtilities/ImageIO.o \
 	../Statistics/DiagonalGaussian.o ../Statistics/MixtureOfDiagonalGaussians.o \
 	../Statistics/PosteriorgramGenerator.o
@@ -30,4 +38,4 @@ MultiBestPath.o: MultiBestPath.cc MultiBestPath.h
 	$(CC) $(CFLAGS) $(INCLUDE) -c MultiBestPath.cc
 
 clean:
-	rm *.o testdtw testmulti GeneratePronunciations
+	rm *.o testdtw testmulti GeneratePronunciations CreateSimilarityMatrix

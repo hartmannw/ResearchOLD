@@ -79,6 +79,28 @@ double MixtureOfDiagonalGaussians::CSDivergence(MixtureOfDiagonalGaussians mog)
   return (first_term + second_term + third_term);
 }
 
+std::vector<double> MixtureOfDiagonalGaussians::WeightedMean()
+{
+  unsigned int dimension = gaussian_[0].dimension();
+  std::vector<double> ret(dimension, 0);
+  /*
+  double max_weight = 0;
+  for(unsigned int c = 0; c < gaussian_.size(); ++c)
+  {
+    if( weight_[c] > max_weight)
+    {
+      max_weight = weight_[c];
+      for(unsigned int m = 0; m < dimension; ++m)
+        ret[m] = gaussian_[c].mean(m);
+    }
+  }
+  */ 
+  for(unsigned int c = 0; c < gaussian_.size(); ++c)
+    for(unsigned int m = 0; m < dimension; ++m)
+      ret[m] += (weight_[c] * gaussian_[c].mean(m));
+  return ret;
+}
+
 void MixtureOfDiagonalGaussians::NormalizeWeights()
 {
   double total = 0;
@@ -86,6 +108,20 @@ void MixtureOfDiagonalGaussians::NormalizeWeights()
     total += weight_[i];
   for(unsigned int i = 0; i < weight_.size(); ++i)
     weight_[i] = weight_[i] / total;
+}
+
+std::vector<double> MixtureOfDiagonalGaussians::sample(
+    std::default_random_engine &generator)
+{
+  unsigned int dimension = gaussian_[0].dimension();
+  std::vector<double> ret(dimension, 0);
+  for(unsigned int i = 0; i < weight_.size(); ++i)
+  {
+    std::vector<double> data = gaussian_[i].sample(generator);
+    for(unsigned int m = 0; m < dimension; ++m)
+      ret[m] += (weight_[i] * data[m]);
+  }
+  return ret;
 }
 
 }

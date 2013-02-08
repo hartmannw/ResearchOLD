@@ -1,5 +1,5 @@
 CC=g++
-CFLAGS=-Wall -O2
+CFLAGS=-Wall -O2 -std=c++11
 INCLUDE=-I../Utilities/ \
     -I../FileUtilities/
 
@@ -21,7 +21,7 @@ MixtureOfDiagonalGaussians.o: MixtureOfDiagonalGaussians.cc \
 	$(CC) $(CFLAGS) $(INCLUDE) -c MixtureOfDiagonalGaussians.cc
 
 HiddenMarkovModel.o: HiddenMarkovModel.cc HiddenMarkovModel.h
-	$(CC) $(CFLAGS) $(INCLUDE) -c HiddenMarkovModel.cc
+	$(CC) $(CFLAGS) $(INCLUDE) -c HiddenMarkovModel.cc ../Utilities/Matrix.o
 
 HmmSet.o: HmmSet.cc HmmSet.h HiddenMarkovModel.o MixtureOfDiagonalGaussians.o 
 	$(CC) $(CFLAGS) $(INCLUDE) -c HmmSet.cc

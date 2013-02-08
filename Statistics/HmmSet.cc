@@ -115,8 +115,28 @@ bool HmmSet::LoadSingleHtkHmm(std::ifstream &fin, std::string &line)
     getline(fin, line);
     hmm.AddState( LoadSingleHtkState(fin, line, state_name));
   }
+  while( line.find( std::string("<TRANSP>")) != 0)
+    getline(fin, line);
+  // Load Transition Matrix
+  utilities::Matrix<double> transition;
+  transition.Initialize(state_count + 2, state_count + 2, 0);
+  for(unsigned int r = 0; r < state_count+2; ++r)
+  {
+    getline(fin, line);
+    line = utilities::TrimString(line);
+    tokens.clear();
+    utilities::TokenizeString(line, ' ', tokens);
+    for(unsigned int c = 0; c < tokens.size(); ++c)
+      transition(r,c) = utilities::ToNumber<double>(tokens[c]);
+  }
+  hmm.SetTransitions(transition);
+  // Find the End Token
   while( line.find( std::string("<ENDHMM>")) != 0)
     getline(fin, line);
+
+  unsigned int next_index = hmms_.size();
+  hmms_.push_back(hmm);
+  hmm_index_[hmm.name()] = next_index;
 
   return true;
 

@@ -18,7 +18,9 @@ bool SpeechFeatures::ReadCepFile( std::string filename )
   fin.read(reinterpret_cast<char*>(number_of_frames),
       sizeof(number_of_frames) * header.number_of_records);
 
-
+  //std::cout<<header.vector_size<<std::endl;
+  //std::cout<<header.number_of_records<<std::endl;
+  //std::cout<<number_of_frames[0]<<std::endl;
   feature_width_ = header.vector_size;
   features_.resize(header.number_of_records);
   for(int r = 0; r < header.number_of_records; ++r)

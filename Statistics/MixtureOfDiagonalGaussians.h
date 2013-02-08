@@ -55,9 +55,13 @@ class MixtureOfDiagonalGaussians
   // Standard accessor functions.
   double weight(unsigned int i) const {return weight_[i];}
   DiagonalGaussian gaussian(unsigned int i) const {return gaussian_[i];}
+  std::vector<double> WeightedMean();
 
   // Renormalizes the weight vector so that the weights sum to one.
   void NormalizeWeights();
+
+  // Sample from the GMM
+  std::vector<double> sample(std::default_random_engine &generator);
  
 };
 

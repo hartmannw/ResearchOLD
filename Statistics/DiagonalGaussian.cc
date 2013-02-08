@@ -81,4 +81,17 @@ double DiagonalGaussian::determinant()
   return ret;
 }
 
+std::vector<double> DiagonalGaussian::sample( 
+    std::default_random_engine &generator)
+{
+  std::vector<double> ret;
+  for(unsigned int i = 0; i < mean_.size(); ++i)
+  {
+    std::normal_distribution<double> distribution(
+        mean_[i],std::sqrt(variance_[i]));
+    ret.push_back(distribution(generator));
+  }
+  return ret;
+}
+
 }
