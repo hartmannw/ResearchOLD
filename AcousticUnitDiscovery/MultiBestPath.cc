@@ -208,6 +208,38 @@ std::vector<int> FindRestrictedViterbiPath(
       final_score);
 }
 
+std::vector<int> BestPathInSet(                                          
+    const std::vector<utilities::Matrix<double> > &pgram_set,                    
+    const utilities::Matrix<double> &transition, int min_frames)
+{
+  std::vector<std::vector<int> > path_set;
+  std::vector<double> path_score;
+  double score;
+  for(unsigned int i = 0; i < pgram_set.size(); ++i)
+  {
+    std::vector<int> path;
+    path = FindViterbiPath(pgram_set[i], transition,
+          min_frames, score);
+    path_set.push_back(path);
+    double total_score = 0;
+    // Check the score for every example in pgram_set
+    for(unsigned int j = 0; j < pgram_set.size(); ++j)
+    {
+      FindRestrictedViterbiPath(pgram_set[j] , transition, min_frames, 
+          path, true, score);
+      total_score += score;
+    }
+    path_score.push_back(total_score);
+  }
+
+  unsigned int best_index = 0;
+  for(unsigned int i = 1; i < path_score.size(); ++i)
+    if(path_score[best_index] < path_score[i])
+      best_index = i;
+
+  return path_set[best_index];
+}
+
 // The algorithm fills the dp_matrix by finding the best path that goes through
 // a particular state. If the best path with /ae/ as the second state starts
 // at /k/, then we assume the best path of any path with /ae/ as the second

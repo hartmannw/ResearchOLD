@@ -42,6 +42,7 @@ class HiddenMarkovModel
   unsigned int NumberOfStates() { return states_.size(); }
   double transition(unsigned int r, unsigned int c) {
       return transition_matrix_(r,c);}
+  double ExpectedDuration();
 };
 
 }

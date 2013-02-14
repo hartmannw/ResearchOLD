@@ -7,6 +7,12 @@
 namespace statistics
 {
 
-
+double HiddenMarkovModel::ExpectedDuration()
+{
+  double ret = 0;
+  for(unsigned int i = 1; i <  transition_matrix_.NumRows()-1; ++i)
+    ret += 1 + (1 / (1 - transition_matrix_(i,i)));
+  return ret;
+}
 
 }

@@ -53,7 +53,7 @@ utilities::Matrix<double> PosteriorgramGenerator::ComputeSimilarityMatrix()
 
 // Assume data is in a (feature x frame) format.
 utilities::Matrix<double> PosteriorgramGenerator::ComputePosteriorgram(
-    const utilities::Matrix<double> &data)
+    const utilities::Matrix<double> &data) const
 {
   utilities::Matrix<double> ret;
 

@@ -33,6 +33,10 @@
 // ApproximateViterbiSet: Given a set of posteriorgrams, finds the path that 
 // maximizes the likelihood for the entire set. The implementation is an 
 // approximation and does not guarentee the true path.
+//
+// BestPathInSet: First finds the best path for each posteriorgram in the set.
+// Then it selects from that set of paths the path that maximizes the 
+// likelihood for the entire set.
 
 namespace acousticunitdiscovery
 {
@@ -66,6 +70,12 @@ std::vector<int> FindRestrictedViterbiPath(
     const utilities::Matrix<double> &pgram,                                      
     const utilities::Matrix<double> &transition, int min_frames,                 
     std::vector<int> initial_path, bool force_align, double &final_score);
+
+// Returns the one best path for a particular posteriorgram in the set that also
+// maximizes the likelihood for the entire set.
+std::vector<int> BestPathInSet(
+    const std::vector<utilities::Matrix<double> > &pgram_set,
+    const utilities::Matrix<double> &transition, int min_frames);
 
 // Returns the best single path for an entire set of posteriorgrams. The 
 // implementation is approximate, so the best path is not guaranteed.

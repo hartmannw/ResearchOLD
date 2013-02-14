@@ -14,7 +14,7 @@ void MixtureOfDiagonalGaussians::SetAllGaussians(
   weight_ = weight;
 }
 
-double MixtureOfDiagonalGaussians::Likelihood(std::vector<double> &point)
+double MixtureOfDiagonalGaussians::Likelihood(std::vector<double> &point) const
 {
   double ret = 0;
   for(unsigned int i = 0; i < gaussian_.size(); ++i)
@@ -22,7 +22,8 @@ double MixtureOfDiagonalGaussians::Likelihood(std::vector<double> &point)
   return ret;
 }
 
-double MixtureOfDiagonalGaussians::LogLikelihood(std::vector<double> &point)
+double MixtureOfDiagonalGaussians::LogLikelihood(
+    std::vector<double> &point) const
 {
   return log(Likelihood(point));
 }
@@ -34,7 +35,8 @@ double MixtureOfDiagonalGaussians::LogLikelihood(std::vector<double> &point)
 // discrepency, but was unsuccessful. Since this matches the author's
 // implementation and evaluates their testset correctly, I am willing to trust
 // this implementation is the correct one.
-double MixtureOfDiagonalGaussians::CSDivergence(MixtureOfDiagonalGaussians mog)
+double MixtureOfDiagonalGaussians::CSDivergence
+    (MixtureOfDiagonalGaussians mog) const
 {
   // Divergence measure is split into three terms.
   double first_term = 0, second_term = 0, third_term = 0;
@@ -79,22 +81,10 @@ double MixtureOfDiagonalGaussians::CSDivergence(MixtureOfDiagonalGaussians mog)
   return (first_term + second_term + third_term);
 }
 
-std::vector<double> MixtureOfDiagonalGaussians::WeightedMean()
+std::vector<double> MixtureOfDiagonalGaussians::WeightedMean() const
 {
   unsigned int dimension = gaussian_[0].dimension();
   std::vector<double> ret(dimension, 0);
-  /*
-  double max_weight = 0;
-  for(unsigned int c = 0; c < gaussian_.size(); ++c)
-  {
-    if( weight_[c] > max_weight)
-    {
-      max_weight = weight_[c];
-      for(unsigned int m = 0; m < dimension; ++m)
-        ret[m] = gaussian_[c].mean(m);
-    }
-  }
-  */ 
   for(unsigned int c = 0; c < gaussian_.size(); ++c)
     for(unsigned int m = 0; m < dimension; ++m)
       ret[m] += (weight_[c] * gaussian_[c].mean(m));
@@ -110,18 +100,23 @@ void MixtureOfDiagonalGaussians::NormalizeWeights()
     weight_[i] = weight_[i] / total;
 }
 
-std::vector<double> MixtureOfDiagonalGaussians::sample(
-    std::default_random_engine &generator)
+// Selects one Gaussian from the mixture based on the weights and then samples
+// that Gaussian distribution.
+std::vector<double> MixtureOfDiagonalGaussians::Sample(
+    std::default_random_engine &generator) const
 {
-  unsigned int dimension = gaussian_[0].dimension();
-  std::vector<double> ret(dimension, 0);
+  std::uniform_real_distribution<double> distribution(0.0,1.0);
+  double point = distribution(generator);
+  double total_weight = 0;
   for(unsigned int i = 0; i < weight_.size(); ++i)
   {
-    std::vector<double> data = gaussian_[i].sample(generator);
-    for(unsigned int m = 0; m < dimension; ++m)
-      ret[m] += (weight_[i] * data[m]);
+    total_weight += weight_.size();
+    if(point <= total_weight)
+      return gaussian_[i].Sample(generator);
   }
-  return ret;
+  // If we reach this point, it must be due to a normalization error with the
+  // mixture weights. We assume the final mixture should then be used.
+  return gaussian_[ weight_.size()-1 ].Sample(generator);
 }
 
 }

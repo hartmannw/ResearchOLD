@@ -39,15 +39,15 @@ class MixtureOfDiagonalGaussians
       std::vector<double> weight);
 
   // Returns the likelihood of the entire mixture.
-  double Likelihood(std::vector<double> &point);
-  double LogLikelihood(std::vector<double> &point);
+  double Likelihood(std::vector<double> &point) const;
+  double LogLikelihood(std::vector<double> &point) const;
 
   // Returns a value known as the Cauchy-Schwarz divergence, a symmetric
   // distance measure between two MOG distributions. It is similar to KL 
   // divergence, but it has a closed form solution and can be computed quickly.
   // More information can be found in the paper "Closed-form Cauchy-Schwarz PDF
   // divergence for mixture of Gaussians" by K. Kampa et al.
-  double CSDivergence(MixtureOfDiagonalGaussians mog);
+  double CSDivergence(MixtureOfDiagonalGaussians mog) const;
 
   // Returns number of Gaussians in the mixture.
   unsigned int components() const {return gaussian_.size();}
@@ -55,13 +55,13 @@ class MixtureOfDiagonalGaussians
   // Standard accessor functions.
   double weight(unsigned int i) const {return weight_[i];}
   DiagonalGaussian gaussian(unsigned int i) const {return gaussian_[i];}
-  std::vector<double> WeightedMean();
+  std::vector<double> WeightedMean() const;
 
   // Renormalizes the weight vector so that the weights sum to one.
   void NormalizeWeights();
 
   // Sample from the GMM
-  std::vector<double> sample(std::default_random_engine &generator);
+  std::vector<double> Sample(std::default_random_engine &generator) const;
  
 };
 

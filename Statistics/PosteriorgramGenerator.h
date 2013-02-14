@@ -49,7 +49,7 @@ class PosteriorgramGenerator
   // Computes the posteriorgram where the rows are posteriors and columns are 
   // frames. Assumes the columns in data are also frames. 
   utilities::Matrix<double> ComputePosteriorgram(
-      const utilities::Matrix<double> &data);
+      const utilities::Matrix<double> &data) const;
 
   // Given the posteriorgram, returns the index of the highest scoring posterior
   // in each frame.

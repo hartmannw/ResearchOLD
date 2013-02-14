@@ -1,6 +1,8 @@
 CC=g++
 CFLAGS=-Wall -O2
 
+fresh: clean all
+
 all: TestMatrix Matrix.o StringFunctions.o MatrixFunctions.o
 
 Matrix.o: Matrix.h Matrix.cc

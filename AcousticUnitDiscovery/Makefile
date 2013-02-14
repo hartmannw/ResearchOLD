@@ -4,6 +4,8 @@ INCLUDE=-I../FileUtilities/ \
 				-I../Utilities/ \
 				-I../Statistics/ 
 
+fresh: clean all
+
 all: TestDTW TestMultiBest GeneratePronunciations CreateSimilarityMatrix
 
 GeneratePronunciations: GeneratePronunciations.cc
@@ -12,7 +14,7 @@ GeneratePronunciations: GeneratePronunciations.cc
 	../Utilities/Matrix.o ../Utilities/StringFunctions.o MultiBestPath.o \
 	../Statistics/HmmSet.o ../FileUtilities/ImageIO.o \
 	../Statistics/DiagonalGaussian.o ../Statistics/MixtureOfDiagonalGaussians.o \
-	../Statistics/PosteriorgramGenerator.o
+	../Statistics/PosteriorgramGenerator.o ../Statistics/HiddenMarkovModel.o
 
 CreateSimilarityMatrix: CreateSimilarityMatrix.cc
 	$(CC) $(CFLAGS) $(INCLUDE) -o CreateSimilarityMatrix \

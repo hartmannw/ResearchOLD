@@ -2,6 +2,8 @@ CC=g++
 CFLAGS=-Wall -O2
 INCLUDE=-I../Utilities/ 
 
+fresh: clean all
+
 all: Test ConvertCep2Ascii ConvertCep2Htk ImageIO.o
 
 Test: SpeechFeatures.o ImageIO.o

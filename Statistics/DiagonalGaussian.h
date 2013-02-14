@@ -35,8 +35,8 @@ class DiagonalGaussian
 
   // Returns the likelihood of the point given the Gaussian. The dimension of
   // point must be equally to the dimension of the Gaussian.
-  double Likelihood(std::vector<double> point);
-  double LogLikelihood(std::vector<double> point);
+  double Likelihood(std::vector<double> point) const;
+  double LogLikelihood(std::vector<double> point) const;
 
   // KL Divergence is a measure of the distance between two Gaussian
   // distributions.
@@ -45,18 +45,18 @@ class DiagonalGaussian
                                                     // should be tested more.
 
   // Standard accessor functions.
-  unsigned int dimension(){ return mean_.size();}
-  double mean(unsigned int i){ return mean_[i];}
-  double variance(unsigned int i){return variance_[i];}
-  std::vector<double> mean(){return mean_;}
-  std::vector<double> variance(){return variance_;}
+  unsigned int dimension() const{ return mean_.size();}
+  double mean(unsigned int i) const { return mean_[i];}
+  double variance(unsigned int i) const {return variance_[i];}
+  std::vector<double> mean() const {return mean_;}
+  std::vector<double> variance() const {return variance_;}
   
   // Returns the determinant of the diagonal covariance matrix.
-  double determinant();
+  double determinant() const;
 
   // Samples the distribution, treating each dimension as an independent 
   // univariate gaussian distribution.
-  std::vector<double> sample( std::default_random_engine &generator);
+  std::vector<double> Sample( std::default_random_engine &generator) const;
 
  private:
   std::vector<double> mean_;

@@ -3,6 +3,8 @@ CFLAGS=-Wall -O2 -std=c++11
 INCLUDE=-I../Utilities/ \
     -I../FileUtilities/
 
+fresh: clean all
+
 all: test_posteriorgram
 
 test_posteriorgram: HmmSet.o MixtureOfDiagonalGaussians.o \

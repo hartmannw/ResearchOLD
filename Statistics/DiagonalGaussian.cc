@@ -38,7 +38,7 @@ void DiagonalGaussian::AddVariance(std::vector<double> variance)
   CalculateConstant();
 }
 
-double DiagonalGaussian::Likelihood(std::vector<double> point)
+double DiagonalGaussian::Likelihood(std::vector<double> point) const
 {
   double result = 0;
   for(unsigned int i =0; i < point.size(); ++i)
@@ -48,7 +48,7 @@ double DiagonalGaussian::Likelihood(std::vector<double> point)
   return result;
 }
 
-double DiagonalGaussian::LogLikelihood(std::vector<double> point)
+double DiagonalGaussian::LogLikelihood(std::vector<double> point) const
 {
   return std::log(Likelihood(point));
 }
@@ -73,7 +73,7 @@ double DiagonalGaussian::SymmetricKLDivergence(DiagonalGaussian g)
 }
 
 // Determinant of a diagonal matrix is the product of the diagaonal elements.
-double DiagonalGaussian::determinant()
+double DiagonalGaussian::determinant() const
 {
   double ret = 1;
   for(unsigned int i = 0; i < variance_.size(); ++i)
@@ -81,8 +81,8 @@ double DiagonalGaussian::determinant()
   return ret;
 }
 
-std::vector<double> DiagonalGaussian::sample( 
-    std::default_random_engine &generator)
+std::vector<double> DiagonalGaussian::Sample( 
+    std::default_random_engine &generator) const
 {
   std::vector<double> ret;
   for(unsigned int i = 0; i < mean_.size(); ++i)
