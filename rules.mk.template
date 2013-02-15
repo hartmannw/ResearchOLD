@@ -1,0 +1,11 @@
+# Template for rule in any directory. The names of all executables goes in 
+# local_relexec and the names of any files compiled into objects goes into 
+# local_relsrc. The path to the directory goes in local_dir
+local_dir  := 
+local_relsrc  := 
+local_src  := $(addprefix $(local_dir)/,$(local_relsrc))
+local_relexec  := 
+local_exec  := $(addprefix $(local_dir)/,$(local_relexec))
+
+SRCS += $(local_src)
+EXECS += $(local_exec)
