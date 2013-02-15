@@ -1,3 +1,6 @@
+# Dependency files for make
+*.d
+
 # Compiled Object files
 *.slo
 *.lo
