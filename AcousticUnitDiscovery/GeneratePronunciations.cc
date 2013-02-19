@@ -41,6 +41,8 @@ typedef struct
   unsigned int pronunciation_type;
   unsigned int attempts_per_example; // Maximum number of attempts to generate
                                      // a valid HMM sample for each example.
+  double min_hmm_transition; // Minimum transition value before we assume it
+                             // will exist in the state for at least one frame.
 
   // The following parameters determined by the data.
   unsigned int dimension;
@@ -202,11 +204,16 @@ std::vector<std::vector<double> > GenerateSampleData(
       count++;
       double trans = distribution(generator);
 
-      // Add frame only the first loop iteration because you must spend at least
-      // one frame in each state.
-      std::vector<double> frame = mog[hmm.state(h)].Sample(generator);
-      ret.push_back(frame);
-      if( trans > hmm.transition(h+1, h+1) )
+      if(hmm.transition(h+1, h+1) > param.min_hmm_transition)
+      {
+        // Add frame only the first loop iteration because you must spend at
+        // least one frame in each state.
+        std::vector<double> frame = mog[hmm.state(h)].Sample(generator);
+        ret.push_back(frame);
+        if( trans > hmm.transition(h+1, h+1) )
+          ++h;
+      }
+      else
         ++h;
     }
   }
@@ -247,16 +254,28 @@ void AppendSampleData(std::vector<std::string> &triphone_pronunciation,
 
 std::vector<int> GenerateClusteredPronunciation(
     const std::vector<std::string> &triphone_pronunciation,
-    const statistics::HmmSet &htk, const std::vector<int> &cluster_index)
+    const statistics::HmmSet &htk, const std::vector<int> &cluster_index, 
+    const PronunciationParameters &param)
 {
   std::vector<int> ret;
   for(unsigned int p = 0; p < triphone_pronunciation.size(); ++p)
   {
     statistics::HiddenMarkovModel hmm = htk.Hmm(triphone_pronunciation[p]);
+    //unsigned int best_index = 0;
+    std::vector<double> expected_length(param.total_clusters, 0);
     for(unsigned int h = 0; h < hmm.NumberOfStates(); ++h)
     {
-      ret.push_back( cluster_index[ hmm.state(h) ]);
+      expected_length[ cluster_index[ hmm.state(h) ] ] +=
+          hmm.transition(h+1, h+1);
+      //if(hmm.transition(h+1, h+1) > hmm.transition(best_index+1, best_index+1))
+      //  best_index = h; 
     }
+    unsigned best_index = 0;
+    for(unsigned int i = 0; i < expected_length.size(); ++i)
+      if(expected_length[i] > expected_length[best_index])
+        best_index = i;
+    if(expected_length[best_index] > param.min_hmm_transition)
+      ret.push_back( best_index);
   }
   return ret;
 }
@@ -370,8 +389,9 @@ int main(int argc, char* argv[])
   param.min_frames = 3;
   param.max_frames_per_hmm = 30;
   param.modify_transition = false;
-  param.pronunciation_type = 2; // 0=clustered, 1=MOG, 2=HMM !Change to Enum!
+  param.pronunciation_type = 0; // 0=clustered, 1=MOG, 2=HMM !Change to Enum!
   param.attempts_per_example = 10;
+  param.min_hmm_transition = 0.1;
   std::default_random_engine generator; // A single RNG.
 
   statistics::HmmSet htk;
@@ -431,7 +451,7 @@ int main(int argc, char* argv[])
           param.pronunciation_type == 0) // clusterd type
       {
         index_pronunciation = GenerateClusteredPronunciation(
-            triphone_pronunciation, htk, cluster_index);
+            triphone_pronunciation, htk, cluster_index, param);
       }
       else if(locations.size() < param.min_examples &&
           param.pronunciation_type == 1) // MOG

@@ -44,7 +44,7 @@ ifneq "$(MAKECMDGOALS)" "clean"
 endif
 
 # link
-${EXECS} : $(OBJS)
+${EXECS} : % : %.cc $(OBJS)
 	$(CC) -o $@ $(CPPFLAGS) $(LDFLAGS) $(LDLIBS) $(OBJS) $@.cc
 
 # compile .o and generate dependencies

@@ -1,5 +1,5 @@
 *.pgm
 testdtw
-testmulti
+testmultibest
 GeneratePronunciations
 CreateSimilarityMatrix
