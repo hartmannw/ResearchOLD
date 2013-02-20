@@ -34,12 +34,15 @@ utilities::Matrix<double> PosteriorgramGenerator::ComputeSimilarityMatrix()
   double max_divergence = 0;
   ret.Initialize(mog_.size(), mog_.size());
   for(unsigned int r = 0; r < mog_.size(); ++r)
+  {
     for(unsigned int c = r; c < mog_.size(); ++c)
     {
       ret(r,c) = mog_[r].CSDivergence(mog_[c]);
       if( ret(r,c) > max_divergence)
         max_divergence = ret(r,c);
     }
+    std::cout<<"Mog: "<<r<<std::endl;
+  }
   // Normalize the matrix so that the values are between 0 and 1.
   for(unsigned int r = 0; r < ret.NumRows(); ++r)
     for(unsigned int c = r; c < ret.NumCols(); ++c)

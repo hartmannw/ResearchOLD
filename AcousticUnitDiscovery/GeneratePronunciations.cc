@@ -260,22 +260,8 @@ std::vector<int> GenerateClusteredPronunciation(
   std::vector<int> ret;
   for(unsigned int p = 0; p < triphone_pronunciation.size(); ++p)
   {
-    statistics::HiddenMarkovModel hmm = htk.Hmm(triphone_pronunciation[p]);
-    //unsigned int best_index = 0;
-    std::vector<double> expected_length(param.total_clusters, 0);
-    for(unsigned int h = 0; h < hmm.NumberOfStates(); ++h)
-    {
-      expected_length[ cluster_index[ hmm.state(h) ] ] +=
-          hmm.transition(h+1, h+1);
-      //if(hmm.transition(h+1, h+1) > hmm.transition(best_index+1, best_index+1))
-      //  best_index = h; 
-    }
-    unsigned best_index = 0;
-    for(unsigned int i = 0; i < expected_length.size(); ++i)
-      if(expected_length[i] > expected_length[best_index])
-        best_index = i;
-    if(expected_length[best_index] > param.min_hmm_transition)
-      ret.push_back( best_index);
+    unsigned int index = htk.HmmIndex(triphone_pronunciation[p]);
+    ret.push_back(cluster_index[index]);
   }
   return ret;
 }
@@ -399,13 +385,8 @@ int main(int argc, char* argv[])
   std::vector<statistics::MixtureOfDiagonalGaussians> mog = htk.states();
   // Ugly way of initializing dimension, Find a better way!!!
   param.dimension = mog[0].gaussian(0).dimension();
-  statistics::PosteriorgramGenerator pg;
-  utilities::Matrix<double> transition;
   std::vector<int> cluster_index = ReadVectorFromFile(param.cluster_file);
   param.total_clusters = cluster_index.size();
-  transition = acousticunitdiscovery::GenerateTransitionMatrix(
-      param.total_clusters, param.self_transition);
-  pg.SetGaussians(mog, cluster_index);
   
   std::ifstream wordlist_fin;
   wordlist_fin.open(param.word_information.c_str());
@@ -447,50 +428,9 @@ int main(int argc, char* argv[])
       std::vector<std::string> triphone_pronunciation = 
           GenerateTriphonePronunciation(original_pronunciation);
 
-      if(locations.size() < param.min_examples && 
-          param.pronunciation_type == 0) // clusterd type
-      {
-        index_pronunciation = GenerateClusteredPronunciation(
-            triphone_pronunciation, htk, cluster_index, param);
-      }
-      else if(locations.size() < param.min_examples &&
-          param.pronunciation_type == 1) // MOG
-      {
-        index_pronunciation = GenerateMogPronunciation( triphone_pronunciation,
-            htk, mog, generator, transition, pg, cluster_index, param);
-      }
-      else if(locations.size() < param.min_examples &&
-          param.pronunciation_type == 2) // HMM
-      {
-        std::vector<utilities::Matrix<double> > pgram_set = 
-            LoadPosteriorgramData(locations, pg, param);
+      index_pronunciation = GenerateClusteredPronunciation(
+          triphone_pronunciation, htk, cluster_index, param);
 
-        double mean = 0;
-        if(pgram_set.size() == 0) // Set mean based on HMM.
-        {
-          mean = ExpectedWordLength(triphone_pronunciation, htk);
-        }
-        else // Set mean based on the length of examples
-        {
-          for(unsigned int i = 0; i < locations.size(); ++i)
-            mean += (locations[i].end - locations[i].start + 1);
-          mean = mean / locations.size();
-        }
-        AppendSampleData(triphone_pronunciation, htk, mog, pg,generator, param, 
-            mean, pgram_set);
-        index_pronunciation = acousticunitdiscovery::BestPathInSet(
-            pgram_set, transition, param.min_frames);
-
-      }
-      else // Generate data solely from data.
-      {
-        std::vector<utilities::Matrix<double> > pgram_set = 
-            LoadPosteriorgramData(locations, pg, param);
-        index_pronunciation = acousticunitdiscovery::BestPathInSet(
-            pgram_set, transition, param.min_frames);
-        //index_pronunciation = acousticunitdiscovery::ApproximateViterbiSet(
-        //    pgram_set, transition, param.min_frames);
-      }
       final_pronunciation = ConvertToAlphaPronunciation(index_pronunciation);
       for(unsigned int i = 0; i < final_pronunciation.size(); ++i)
         std::cout<<" "<<final_pronunciation[i];

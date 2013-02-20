@@ -2,7 +2,7 @@
 // This is free and unencumbered software released into the public domain.
 // See the UNLICENSE file for more information.
 
-// Creates a Similarity Matrix for the GMMs in Hidden Markov Model.
+// Creates a Similarity Matrix for the HMMs in a set of Hidden Markov Models.
 
 #include<cmath>
 #include<iostream>
@@ -17,14 +17,13 @@
 
 int main(int argc, char* argv[])
 {
-  if( argc < 3)
+  if( argc < 2)
   {
-    std::cout<<"Usage is <HMM File> <alpha update>"<<std::endl;
+    std::cout<<"Usage is <HMM File>"<<std::endl;
     exit(0);
   }
 
   std::string hmmfile = std::string(argv[1]);
-  double alpha_update = utilities::ToNumber<double>( std::string(argv[2]) );
 
   statistics::HmmSet htk;
   htk.LoadHtkHmmSet(hmmfile);
@@ -35,23 +34,23 @@ int main(int argc, char* argv[])
   pg.SetGaussians(mog);
   utilities::Matrix<double> sm = pg.ComputeSimilarityMatrix();
 
-  for(unsigned int h = 0; h < hmmset.size(); ++h)
-  {
-    for(unsigned int i = 0; i < hmmset[h].NumberOfStates(); ++i)
-      for(unsigned int j = (i+1); j < hmmset[h].NumberOfStates(); ++j)
-      {
-        unsigned int state_i = hmmset[h].state(i);
-        unsigned int state_j = hmmset[h].state(j);
-        sm(state_i, state_j) = ( alpha_update * sm(state_i, state_j) ) +
-          ( 1 - alpha_update );
-        sm(state_j, state_i) = sm(state_i, state_j);
-      }
-  }
+  utilities::Matrix<double> hmm_sm;
+  hmm_sm.Initialize(hmmset.size(), hmmset.size(), 0);
 
-  for(unsigned int r = 0; r < sm.NumRows(); ++r)
+  for(unsigned int i = 0; i < hmmset.size(); ++i)
+    for(unsigned int j = i+1; j < hmmset.size(); ++j)
+    {
+      unsigned int states = 
+          std::min(hmmset[i].NumberOfStates(), hmmset[j].NumberOfStates());
+      for(unsigned int s = 0; s < states; ++s)
+        hmm_sm(i,j) += (1 - sm(hmmset[i].state(s), hmmset[j].state(s)));
+      hmm_sm(j,i) = hmm_sm(i,j);
+    }
+
+  for(unsigned int r = 0; r < hmm_sm.NumRows(); ++r)
   {
-    for(unsigned int c = 0; c < sm.NumCols(); ++c)
-      std::cout<<sm(r,c)<<" ";
+    for(unsigned int c = 0; c < hmm_sm.NumCols(); ++c)
+      std::cout<<hmm_sm(r,c)<<" ";
     std::cout<<"\n";
   }
 
