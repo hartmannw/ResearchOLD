@@ -1,0 +1,5 @@
+Specific information about the purpose of this branch compared to the master 
+branch.
+
+Contains code for generating pronunciations by sampling an HMM. Did not work
+well initially, but would like to try again with new viterbi set code.
