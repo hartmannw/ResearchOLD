@@ -486,11 +486,13 @@ int main(int argc, char* argv[])
       {
         std::vector<utilities::Matrix<double> > pgram_set = 
             LoadPosteriorgramData(locations, pg, param);
-        index_pronunciation = acousticunitdiscovery::BestPathInSet(
-            pgram_set, transition, param.min_frames);
-        //index_pronunciation = acousticunitdiscovery::ApproximateViterbiSet(
+        //index_pronunciation = acousticunitdiscovery::BestPathInSet(
         //    pgram_set, transition, param.min_frames);
+        index_pronunciation = acousticunitdiscovery::ApproximateViterbiSet2(
+            pgram_set, transition, param.min_frames, 
+            original_pronunciation.size());
       }
+      std::cout<<" "<<locations.size();
       final_pronunciation = ConvertToAlphaPronunciation(index_pronunciation);
       for(unsigned int i = 0; i < final_pronunciation.size(); ++i)
         std::cout<<" "<<final_pronunciation[i];

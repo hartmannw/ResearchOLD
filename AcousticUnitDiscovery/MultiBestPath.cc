@@ -240,6 +240,275 @@ std::vector<int> BestPathInSet(
   return path_set[best_index];
 }
 
+utilities::Matrix<ViterbiInfo> GenerateBackMatrix(
+    const utilities::Matrix<double> &pgram,
+    const utilities::Matrix<double> &transition, int min_frames)
+{
+  utilities::Matrix<ViterbiInfo> ret;
+  unsigned int states = pgram.NumRows() * min_frames;
+  unsigned int frames = pgram.NumCols();
+  double zero_log = -1000000;    // Essentially represents log(0). Used for
+                                 // states that should be unreachable.
+  double minimum_log = -50;
+  std::vector<int> initial_path; // Because of the old format of the functions
+                                 // for getting state and transition scores, we
+                                 // need this variable to specifically state
+                                 // there is no initial path restriction.
+
+  // We initialize the the dp_matrix. Initially, every state is set with the
+  // minimum score and considered inaccessible. Only the final substate for 
+  // every state is valid.
+  ViterbiInfo default_value;
+  default_value.parent = -1;
+  default_value.score = zero_log;
+  ret.Initialize(states, frames, default_value);
+
+  for(unsigned int s = (min_frames - 1); s < states; s+=min_frames)
+  {
+    ret(s, frames-1).score = std::max(
+        GetStateScore(pgram, initial_path, min_frames, s, frames-1), 
+        minimum_log);
+  }
+  
+  // Fill in the remainder of the backmatrix
+  for(int f = (frames-2); f >= 0; --f)
+  {
+    for(unsigned int s = 0; s < states; ++s)
+    {
+      ViterbiInfo best_point;
+      best_point.parent = s; // Begin with self-transition since that is always
+                             // legal.
+      best_point.score = ret(s, f+1).score + std::max(
+          GetTransitionScore(transition, initial_path, min_frames, s, s),
+          zero_log);
+      if(static_cast<int>(s) % min_frames < (min_frames-1))
+      { // Only self loop and next state are valid.
+        double score = ret(s+1, f+1).score + std::max(
+            GetTransitionScore(transition, initial_path, min_frames, s, s+1),
+            zero_log);
+        if(score > best_point.score)
+        {
+          best_point.score = score;
+          best_point.parent = s+1;
+        }
+      }
+      else
+      {
+        for(unsigned int p = 0; p < states; p+=min_frames)
+        {
+          double score = ret(p, f+1).score + std::max(
+              GetTransitionScore(transition, initial_path, min_frames, s, p),
+              zero_log);
+          if(score > best_point.score)
+          {
+            best_point.score = score;
+            best_point.parent = p;
+          }
+        } // end for p
+      }
+      best_point.score += std::max(
+          GetStateScore(pgram, initial_path, min_frames, s, f), minimum_log);
+      ret(s, f) = best_point;
+    } // end for s
+  } // end for f
+  return ret;
+}
+
+double RestrictedViterbiPathScore(
+    const utilities::Matrix<double> &pgram,
+    const utilities::Matrix<ViterbiInfo> &back_matrix,
+    const utilities::Matrix<double> &transition, int min_frames, 
+    std::vector<int> initial_path)
+{
+  utilities::Matrix<ViterbiInfo> dp_matrix; // Holds the memoization data.
+  unsigned int states = (initial_path.size()) * min_frames;
+  unsigned int frames = pgram.NumCols();
+  double zero_log = -1000000;    // Essentially represents log(0). Used for
+                                 // states that should be unreachable.
+  double minimum_log = -50;
+  double final_score = zero_log;
+
+  //for(unsigned int i = 0; i < initial_path.size(); ++i)
+  //  std::cout<<initial_path[i]<<" ";
+  //std::cout<<std::endl;
+
+  // We initialize the the dp_matrix. Initially, every state is set with the
+  // minimum score and considered inaccessible. If there is an initial path 
+  // restriction, then only the first overall state is a valid start state.
+  // Otherwise, the initial substate for every state is valid.
+  ViterbiInfo default_value;
+  default_value.parent = -1;
+  default_value.score = zero_log;
+  dp_matrix.Initialize(states, frames, default_value);
+
+  dp_matrix(0,0).score = std::max(
+      GetStateScore(pgram, initial_path, min_frames, 0, 0), minimum_log);
+  
+  // Fill in the remainder of the dp_matrix
+  for(unsigned int f = 1; f < frames; ++f)
+  {
+    // While the transistion logic has been pushed off to a separate function it
+    // is too slow to loop over the full number of states. Instead we limit the
+    // innermost loop to only valid transitions.
+    for(unsigned int s = 0; s < states; ++s)
+    {
+      ViterbiInfo best_point;
+      best_point.parent = s; // Begin with self-transition since that is always
+                             // legal.
+      best_point.score = dp_matrix(s, f-1).score + std::max(
+          GetTransitionScore(transition, initial_path, min_frames, s, s),
+          zero_log);
+      if(s > 0 )
+      { 
+        double score = dp_matrix(s-1, f-1).score + std::max(
+            GetTransitionScore(transition, initial_path, min_frames, s-1, s),
+            zero_log);
+        if(score > best_point.score)
+        {
+          best_point.score = score;
+          best_point.parent = s-1;
+        }
+      }
+      best_point.score += std::max(
+          GetStateScore(pgram, initial_path, min_frames, s, f), minimum_log);
+      dp_matrix(s, f) = best_point;
+    } // end for s
+    if( f-1 >= states ) // This could be a valid ending
+    {
+      int final_state = initial_path[initial_path.size()-1];
+      double score = dp_matrix(states-2,f-1).score + std::max(
+          GetTransitionScore(transition, initial_path, min_frames, states-2,
+          states-1), zero_log) + back_matrix(final_state, f).score;
+      if(score > final_score)
+        final_score = score;
+      /*
+      for(unsigned int p = 0; p < back_matrix.NumRows(); p+=min_frames)
+      {
+        double score = dp_matrix(states-1, f-1).score + std::max(
+            GetTransitionScore(transition, initial_path, min_frames, states-1,
+            states+p), zero_log) + back_matrix(p, f).score;
+        if(score > final_score)
+          final_score = score;
+      }
+      */
+    }
+  } // end for f
+  //for(unsigned int s = 0; s < states; ++s)
+  //  std::cout<<s<<" "<<dp_matrix(s,1).score<<std::endl;
+  //std::cout<<final_score<<std::endl;
+  return final_score;
+}
+
+std::vector<int> ApproximateViterbiSet2(
+    const std::vector<utilities::Matrix<double> > &pgram_set,                    
+    const utilities::Matrix<double> &transition, int min_frames, int max_labels)
+{
+  std::vector<int> ret;
+  double zero_log = -1000000; // Used for unreachable states.
+  utilities::Matrix<ViterbiInfo> dp_matrix;
+  std::vector<utilities::Matrix<ViterbiInfo> > back_matrix;
+  std::vector<ViterbiInfo> end_point;
+  ViterbiInfo default_point;
+  default_point.parent = -1;
+  default_point.score = zero_log;
+  int states = pgram_set[0].NumRows();
+  int frames = pgram_set[0].NumCols();
+  
+  // The number of frames in the dp_matrix is equal to the number of frames in
+  // the shortest posteriorgram / min_frames. Here frames does not mean actual
+  // frames but instead corresponds to something like segments.
+  for(unsigned int i = 1; i < pgram_set.size(); ++i)
+    if(static_cast<int>(pgram_set[i].NumCols()) < frames)
+      frames = pgram_set[i].NumCols();
+  frames = std::floor( static_cast<double>(frames) / 
+      static_cast<double>(min_frames));
+  if(frames < 2)
+    frames = 2;
+
+  // end_point[i] will contain a pointer to the best path that contains i 
+  // labels.
+  end_point.resize(frames, default_point);
+  dp_matrix.Initialize(states, frames, default_point);
+
+  // Initialize all of the back_matrices
+  for(unsigned int i = 0; i < pgram_set.size(); ++i)
+  {
+    back_matrix.push_back(GenerateBackMatrix(pgram_set[i], 
+          transition, min_frames));
+  }
+
+  for(int f = 1; f < std::min(frames, max_labels+1); ++f)
+  {
+    for(int s = 0; s < states; ++s)
+    {
+      for(int p = 0; p < states; ++p)
+      {
+        if( p != s) // No self transitions are allowed.
+        {
+          std::vector<int> initial_path = BestSubPathInViterbiSet(dp_matrix, p, 
+              f-1);
+          initial_path.push_back(p);
+          initial_path.push_back(s);
+          double final_score = 0;
+          for(unsigned int i = 0; i < pgram_set.size(); ++i)
+          {
+            final_score += RestrictedViterbiPathScore(pgram_set[i], 
+                back_matrix[i], transition, min_frames, initial_path);
+          }
+          final_score = final_score / pgram_set.size();
+          if(final_score > dp_matrix(s, f).score)
+          {
+            dp_matrix(s, f).score = final_score;
+            dp_matrix(s, f).parent = p;
+          }
+        }
+      } // end for p
+    } // end for s
+    // Now check for the best path that exits at this point.
+    for( int p = 0; p < states; ++p)
+    {
+      std::vector<int> initial_path = BestSubPathInViterbiSet(dp_matrix, p, 
+          f-1);
+      initial_path.push_back(p);
+      double score = 0, final_score = 0;
+      for(unsigned int i = 0; i < pgram_set.size(); ++i)
+      {
+        FindRestrictedViterbiPath(pgram_set[i], transition, min_frames, 
+            initial_path, true, score);
+        final_score += score;
+      }
+      final_score = final_score / pgram_set.size();
+      if(final_score > end_point[f].score)
+      {
+        end_point[f].score = final_score;
+        end_point[f].parent = p;
+      }
+    }// end for p
+    // Display best exit path for testing purposes DELETE
+    /*
+    std::vector<int> exit_path = BestSubPathInViterbiSet(dp_matrix, 
+        end_point[f].parent, f-1);
+    exit_path.push_back(end_point[f].parent);
+    std::cout<<"Exit path ("<<end_point[f].score<<"): ";
+    for(unsigned int i = 0; i < exit_path.size(); ++i)
+      std::cout<<exit_path[i]<<" ";
+    std::cout<<std::endl;
+    */
+    // END DELETE
+  } // end for f
+
+  // Find the best number of segments.
+  double best_index = 0;
+  for(unsigned int i = 1; i < end_point.size(); ++i)
+    if(end_point[i].score > end_point[best_index].score)
+      best_index = i;
+   
+  ret = BestSubPathInViterbiSet(dp_matrix, end_point[best_index].parent,
+      best_index - 1);
+  ret.push_back(end_point[best_index].parent);
+  return ret;
+}
+
 // The algorithm fills the dp_matrix by finding the best path that goes through
 // a particular state. If the best path with /ae/ as the second state starts
 // at /k/, then we assume the best path of any path with /ae/ as the second

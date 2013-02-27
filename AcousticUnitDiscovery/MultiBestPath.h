@@ -77,11 +77,22 @@ std::vector<int> BestPathInSet(
     const std::vector<utilities::Matrix<double> > &pgram_set,
     const utilities::Matrix<double> &transition, int min_frames);
 
+utilities::Matrix<ViterbiInfo> GenerateBackMatrix(
+    const utilities::Matrix<double> &pgram,
+    const utilities::Matrix<double> &transition, int min_frames);
+
 // Returns the best single path for an entire set of posteriorgrams. The 
 // implementation is approximate, so the best path is not guaranteed.
 std::vector<int> ApproximateViterbiSet(
     const std::vector<utilities::Matrix<double> > &pgram_set,
     const utilities::Matrix<double> &transition, int min_frames);
+
+// Returns the best single path for an entire set of posteriorgrams. The 
+// implementation is approximate, so the best path is not guaranteed.
+std::vector<int> ApproximateViterbiSet2(
+    const std::vector<utilities::Matrix<double> > &pgram_set,
+    const utilities::Matrix<double> &transition, int min_frames, 
+    int max_labels);
 
 // Handles the logic of determining the state likelihood. Should only be used 
 // by functions internal to MultiBestPath.
