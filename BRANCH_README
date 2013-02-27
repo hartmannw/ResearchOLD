@@ -1,0 +1,5 @@
+Specific information about the purpose of this branch compared to the master 
+branch.
+
+The original ViterbiSet code was too slow. In this branch I am workin on
+optimizations.
