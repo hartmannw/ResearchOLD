@@ -60,9 +60,6 @@ class MixtureOfDiagonalGaussians
   // Renormalizes the weight vector so that the weights sum to one.
   void NormalizeWeights();
 
-  // Sample from the GMM
-  std::vector<double> Sample(std::default_random_engine &generator) const;
- 
 };
 
 }

@@ -7,7 +7,6 @@
 
 #include <vector>
 #include <cmath>
-#include <random>
 
 // Stores the information needed for a Gaussian with diagonal variance. Both the
 // likelihood and log likelihood of the Gaussian can be evaluated. KL divergence
@@ -53,10 +52,6 @@ class DiagonalGaussian
   
   // Returns the determinant of the diagonal covariance matrix.
   double determinant() const;
-
-  // Samples the distribution, treating each dimension as an independent 
-  // univariate gaussian distribution.
-  std::vector<double> Sample( std::default_random_engine &generator) const;
 
  private:
   std::vector<double> mean_;

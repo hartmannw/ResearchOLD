@@ -56,11 +56,16 @@ class HmmSet
   std::vector<HiddenMarkovModel> hmms() { return hmms_; }
   std::vector<MixtureOfDiagonalGaussians> states(){return states_;}
   std::vector<std::vector<std::string> > mixture_names();
+  unsigned int HmmCount(){ return hmms_.size(); }
+  unsigned int StateCount(){ return states_.size(); }
   HiddenMarkovModel Hmm(unsigned int index) const { return hmms_[index];}
   HiddenMarkovModel Hmm(std::string name) const {     // Find() is used because 
       return hmms_[ hmm_index_.find(name)->second ];} // it is const.
   unsigned int HmmIndex(std::string name) const {     // Find() is used because 
       return hmm_index_.find(name)->second;}          // it is const.
+
+  double StateLogLikelihood(unsigned int s, std::vector<double> &point) const {
+      return states_[s].LogLikelihood(point);}
 
 };
 

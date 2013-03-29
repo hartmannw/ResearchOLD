@@ -9,7 +9,7 @@
 #include<fstream>
 #include<vector>
 #include<string>
-#include<random>
+#include<assert.h>
 
 #include "Matrix.h"
 #include "SpeechFeatures.h"
@@ -17,6 +17,7 @@
 #include "StringFunctions.h"
 #include "HmmSet.h"
 #include "MultiBestPath.h"
+#include "HmmDecoder.h"
 
 
 // Stores all the basic information that is needed for generating 
@@ -28,21 +29,14 @@ typedef struct
   std::string word_information;
   std::string locationdir;
   std::string hmmfile;
+  std::string monohmmfile;
   std::string cluster_file;
   std::string datadir;
   std::string suffix;
   unsigned int max_examples;
   unsigned int min_examples;
   double length_variance;
-  double self_transition;
-  unsigned int min_frames;
-  unsigned int max_frames_per_hmm;
-  bool modify_transition;
   unsigned int pronunciation_type;
-  unsigned int attempts_per_example; // Maximum number of attempts to generate
-                                     // a valid HMM sample for each example.
-  double min_hmm_transition; // Minimum transition value before we assume it
-                             // will exist in the state for at least one frame.
 
   // The following parameters determined by the data.
   unsigned int dimension;
@@ -57,19 +51,142 @@ typedef struct
   unsigned int end; // Frame where the word ends.
 } WordLocation;
 
-std::vector<int> ReadVectorFromFile(std::string filename)
+
+std::vector<std::string> SplitTriphone(std::string s)
+{
+  std::vector<std::string> ret, tokens;
+  utilities::TokenizeString(s, '-', tokens);
+  if(tokens.size() > 1)
+  {
+    ret.push_back(tokens[0]);
+    s = tokens[1];
+  }
+  else
+    ret.push_back("");
+  tokens.clear();
+
+  utilities::TokenizeString(s, '+', tokens);
+  ret.push_back(tokens[0]);
+  if(tokens.size() > 1)
+    ret.push_back(tokens[1]);
+  else
+    ret.push_back("");
+  return ret;
+
+}
+
+std::vector<int> ReadTriphoneLabels(std::string filename, 
+    statistics::HmmSet &htk)
 {
   std::vector<int> ret;
   std::ifstream fin;
   fin.open(filename.c_str(), std::ios::in);
-  while(fin.good())
+  std::vector<statistics::HiddenMarkovModel> hmmset = htk.hmms();
+  for(unsigned int i = 0; i < hmmset.size(); ++i)
   {
-    double n;
-    fin >> n;
-    ret.push_back(static_cast<int>(n)-1);
+    std::vector<std::string> tri = SplitTriphone(htk.Hmm(i).name());
+    if( tri[0].length() < 1 || tri[2].length() < 1 )
+      ret.push_back(0);
+    else
+    {
+      double n;
+      fin >> n;
+      ret.push_back(static_cast<int>(n) - 1);
+    }
   }
-  ret.resize( ret.size() - 1 );
   return ret;
+}
+
+// Note this only works if we are dealing with clustered graphemes.
+void CorrectIndependentClusters( std::vector<int> &cluster, statistics::HmmSet &htk)
+{
+  std::vector<utilities::Matrix<int> > lcounts, rcounts;
+  std::vector<std::vector<int> > ccounts;
+  int labels = 0;
+  //Find number of labels
+  for(unsigned int i = 0; i < cluster.size(); ++i)
+    if(cluster[i] > labels)
+      labels = cluster[i];
+  labels++;
+  lcounts.resize(labels);
+  rcounts.resize(labels);
+  ccounts.resize(labels);
+  for(int i = 0; i < labels; ++i)
+  {
+    lcounts[i].Initialize(26,26,0);
+    rcounts[i].Initialize(26,26,0);
+    ccounts[i].resize(26,0);
+  }
+  for(unsigned int i = 0; i < cluster.size(); ++i)
+  {
+    std::vector<std::string> tri = SplitTriphone(htk.Hmm(i).name());
+    if(tri[0].length() > 0 && tri[2].length() > 0)
+    {
+      rcounts[cluster[i]](tri[1][0] - 'a', tri[2][0] - 'a')++;
+      lcounts[cluster[i]](tri[1][0] - 'a', tri[0][0] - 'a')++;
+      ccounts[cluster[i]][ tri[1][0] - 'a' ]++;
+    }
+  }
+  // Now we modify the actual clusters
+  for(unsigned int i = 0; i < cluster.size(); ++i)
+  {
+    std::vector<std::string> tri = SplitTriphone(htk.Hmm(i).name());
+    // First find best context independent label
+    int ind = 0;
+    unsigned int c = tri[1][0] - 'a';
+    for(unsigned int j = 0; j < rcounts.size(); ++j)
+      if(ccounts[j][c] > ccounts[ind][c])
+        ind=j;
+    if(tri[1] == "sil" || tri[1] == "sp")
+    {
+      //Do nothing
+    }
+    else if(tri[0].length() < 1 && tri[2].length() < 1)
+    {
+      cluster[i] = ind;
+    }
+    else if(tri[0].length() < 1)
+    {
+      assert(tri[1][0] - 'a' >= 0);
+      assert(tri[1][0] - 'a' < 26);
+      int maxind = cluster[i];
+      unsigned int r = tri[1][0] - 'a';
+      unsigned int c = tri[2][0] - 'a';
+      for(unsigned int j = 0; j < rcounts.size(); ++j)
+        if(rcounts[j](r,c) > rcounts[maxind](r,c))
+          maxind = j;
+      cluster[i] = maxind;
+      if(rcounts[maxind](r,c) == 0)
+        cluster[i] = ind;
+    }
+    else if(tri[2].length() < 1)
+    {
+      int maxind = cluster[i];
+      unsigned int r = tri[1][0] - 'a';
+      unsigned int c = tri[0][0] - 'a';
+      for(unsigned int j = 0; j < lcounts.size(); ++j)
+        if(lcounts[j](r,c) > lcounts[maxind](r,c))
+          maxind = j;
+      cluster[i] = maxind;
+      if(lcounts[maxind](r,c) == 0)
+        cluster[i] = ind;
+    }
+  }
+
+  return;
+}
+
+void RemoveSilenceFromLM(utilities::Matrix<double> &lm, statistics::HmmSet &htk)
+{
+  for(unsigned int h = 0; h < htk.HmmCount(); ++h)
+  {
+    if(htk.Hmm(h).name() == "sp" || htk.Hmm(h).name() == "sil")
+      for(unsigned int i = 0; i < lm.NumRows(); ++i)
+      {
+        lm(h,i) = -1000000;
+        lm(i,h) = -1000000;
+      }
+  }
 }
 
 std::vector<WordLocation> LoadLocationList( const std::string &location_file )
@@ -119,29 +236,16 @@ std::vector<WordLocation> PruneLocationList(
   return ret;
 }
 
-std::vector<utilities::Matrix<double> > LoadPosteriorgramData(
-    const std::vector<WordLocation> &locations,
-    const statistics::PosteriorgramGenerator &pg,
-    const PronunciationParameters &param)
-{
-  std::vector<utilities::Matrix<double> > pgram_set;
-  for(unsigned int i = 0; (i < locations.size()) &&
-      (i < param.max_examples); ++i)
-  {
-    std::string feature_file = 
-        param.datadir + "/" + locations[i].file + "." + param.suffix;
-    fileutilities::SpeechFeatures sf;
-    sf.ReadHtkFile(feature_file);
-    utilities::Matrix<double> data = 
-        sf.frames(0, locations[i].start, locations[i].end);
-    data.Transpose();
-    utilities::Matrix<double> pgram = pg.ComputePosteriorgram(data);
-    for(unsigned int r = 0; r < pgram.NumRows(); ++r)
-      for(unsigned c = 0; c < pgram.NumCols(); ++c)
-        pgram(r,c) = std::log(pgram(r,c));
-    pgram_set.push_back(pgram);
-  }
-  return pgram_set;
+bool LoadDataSegment( const WordLocation &location, 
+    const PronunciationParameters &param, utilities::Matrix<double> &data)
+{ 
+  std::string feature_file = 
+      param.datadir + "/" + location.file + "." + param.suffix;
+  fileutilities::SpeechFeatures sf;
+  sf.ReadHtkFile(feature_file);
+  data = sf.frames(0, location.start, location.end);
+  data.Transpose();
+  return true;
 }
 
 std::vector<std::string> ConvertToAlphaPronunciation(
@@ -151,14 +255,72 @@ std::vector<std::string> ConvertToAlphaPronunciation(
   std::string last("");
   for(unsigned int i = 0; i < pronunciation.size(); ++i)
   {
+    if(pronunciation[i] < 0)
+    {
+      std::cout<<"ERROR"<<std::endl;
+      exit(1);
+    }
     std::string phone("aa");
     phone[0] += std::floor( static_cast<double>(pronunciation[i]) / 10);
     phone[1] += pronunciation[i] % 10;
-    if( phone != last)
+    //if( phone != last)
       ret.push_back(phone);
     last = phone;
   }
   return ret;
+}
+
+std::vector<std::string> ConvertToHmmNamePronunciation(
+    const std::vector<int> &pronunciation, const statistics::HmmSet &htk)
+{
+  std::vector<std::string> ret;
+  std::string last("");
+  for(unsigned int i = 0; i < pronunciation.size(); ++i)
+  {
+    if(pronunciation[i] < 0)
+    {
+      std::cout<<"ERROR"<<std::endl;
+      exit(1);
+    }
+    std::string phone = htk.Hmm(pronunciation[i]).name();
+    //if( phone != last)
+      ret.push_back(phone);
+    last = phone;
+  }
+  return ret;
+}
+
+std::vector<int> BestPathInSet(
+    const std::vector<utilities::Matrix<double> > &score_set,
+    statistics::HmmDecoder hdecode)
+{
+  std::vector<std::vector<int> > path_set;
+  std::vector<double> path_score;
+  double score;
+  for(unsigned int i = 0; i < score_set.size(); ++i)
+  {
+    std::vector<int> path;
+    path = hdecode.ViterbiPath(score_set[i]);
+    path_set.push_back(path);
+    double total_score = 0;
+    // Check the score for every example in pgram_set
+    for(unsigned int j = 0; j < score_set.size(); ++j)
+    {
+      score = hdecode.ForceAlignScore(score_set[j], path);
+      total_score += score;
+    }
+    path_score.push_back(total_score);
+    //for(unsigned int x = 0; x < path.size(); ++x)
+    //  std::cout<<" "<<path[x];
+    //std::cout<<" "<<total_score<<std::endl;
+  }
+
+  unsigned int best_index = 0;
+  for(unsigned int i = 1; i < path_score.size(); ++i)
+    if(path_score[best_index] < path_score[i])
+      best_index = i;
+
+  return path_set[best_index];
 }
 
 std::vector<std::string> GenerateTriphonePronunciation(
@@ -178,80 +340,6 @@ std::vector<std::string> GenerateTriphonePronunciation(
   return ret;
 }
 
-double ExpectedWordLength(
-    std::vector<std::string> &triphone_pronunciation, statistics::HmmSet &htk)
-{
-  double ret = 0;
-  for(unsigned int p = 0; p < triphone_pronunciation.size(); ++p)
-    ret += htk.Hmm(triphone_pronunciation[p]).ExpectedDuration();
-  return ret;
-}
-
-std::vector<std::vector<double> > GenerateSampleData( 
-    std::vector<std::string> &triphone_pronunciation, statistics::HmmSet &htk,
-    std::vector<statistics::MixtureOfDiagonalGaussians> &mog,
-    std::default_random_engine &generator, const PronunciationParameters &param)
-{
-  std::vector<std::vector<double> >ret;
-  std::uniform_real_distribution<double> distribution(0.0,1.0);
-  for(unsigned int p = 0; p < triphone_pronunciation.size(); ++p)
-  {
-    statistics::HiddenMarkovModel hmm = htk.Hmm(triphone_pronunciation[p]);
-    unsigned int h = 0;
-    unsigned int count = 0;
-    while(h < hmm.NumberOfStates() && count < param.max_frames_per_hmm)
-    {
-      count++;
-      double trans = distribution(generator);
-
-      if(hmm.transition(h+1, h+1) > param.min_hmm_transition)
-      {
-        // Add frame only the first loop iteration because you must spend at
-        // least one frame in each state.
-        std::vector<double> frame = mog[hmm.state(h)].Sample(generator);
-        ret.push_back(frame);
-        if( trans > hmm.transition(h+1, h+1) )
-          ++h;
-      }
-      else
-        ++h;
-    }
-  }
-  return ret;
-}
-
-void AppendSampleData(std::vector<std::string> &triphone_pronunciation, 
-    statistics::HmmSet &htk, 
-    std::vector<statistics::MixtureOfDiagonalGaussians> &mog,
-    const statistics::PosteriorgramGenerator &pg,
-    std::default_random_engine &generator, const PronunciationParameters &param,
-    double mean_length, std::vector<utilities::Matrix<double> > &pgram_set)
-{
-  unsigned int attempts = 0;
-  double min_length = (1 - param.length_variance) * mean_length;
-  double max_length = (1 + param.length_variance) * mean_length;
-  while((pgram_set.size() < param.min_examples) && 
-        (attempts < (param.min_examples * param.attempts_per_example)) )
-  {
-    attempts++;
-    std::vector<std::vector<double> > data;
-    data = GenerateSampleData(triphone_pronunciation, htk, mog, 
-        generator, param);
-    unsigned int frames = data.size();
-    if( frames > min_length && frames < max_length)
-    {
-      utilities::Matrix<double> sample, pgram;
-      sample.Initialize(data);
-      sample.Transpose();
-      pgram = pg.ComputePosteriorgram(sample);
-      for(unsigned int r = 0; r < pgram.NumRows(); ++r)
-        for(unsigned c = 0; c < pgram.NumCols(); ++c)
-          pgram(r,c) = std::log(pgram(r,c));
-      pgram_set.push_back(pgram);
-    }
-  }
-}
-
 std::vector<int> GenerateClusteredPronunciation(
     const std::vector<std::string> &triphone_pronunciation,
     const statistics::HmmSet &htk, const std::vector<int> &cluster_index, 
@@ -266,137 +354,50 @@ std::vector<int> GenerateClusteredPronunciation(
   return ret;
 }
 
-std::vector<int> GenerateMogPronunciation(
-    const std::vector<std::string> &triphone_pronunciation,
-    const statistics::HmmSet &htk, 
-    const std::vector<statistics::MixtureOfDiagonalGaussians> &mog,
-    std::default_random_engine &generator, 
-    const utilities::Matrix<double> &transition,
-    const statistics::PosteriorgramGenerator &pg,
-    const std::vector<int> &cluster_index,
-    const PronunciationParameters &param)
-{
-  std::vector<int> ret;
-  utilities::Matrix<double> data, modified_transition, transition_count;
-  
-  if( param.modify_transition )
-  {
-    modified_transition = transition;
-    for(unsigned int r = 0; r < modified_transition.NumRows(); ++r)
-      for(unsigned int c = 0; c < modified_transition.NumCols(); ++c)
-        modified_transition(r,c) = std::exp(modified_transition(r,c));
-    transition_count.Initialize(param.total_clusters, 
-        param.total_clusters, 1);
-  }
-        
-  data.Initialize(param.dimension, triphone_pronunciation.size() * 3);
-  for(unsigned int p = 0; p < triphone_pronunciation.size(); ++p)
-  {
-    statistics::HiddenMarkovModel hmm = htk.Hmm(triphone_pronunciation[p]);
-    for(unsigned int h = 0; h < hmm.NumberOfStates(); ++h)
-    {
-      std::vector<double> sample = mog[hmm.state(h)].Sample(generator);
-      for(unsigned int m = 0; m < sample.size(); ++m)
-        data(m, (p*3)+h) = sample[m];
-    }
-    if( param.modify_transition )
-    {
-      for(unsigned int h = 0; h < hmm.NumberOfStates() - 1; ++h)
-      {
-        unsigned int from_index = cluster_index[ hmm.state(h) ];
-        unsigned int to_index = cluster_index[ hmm.state(h+1) ];
-        modified_transition(from_index, from_index) += hmm.transition(h+1, h+1);
-        transition_count(from_index, from_index)++;
-        modified_transition(from_index, to_index) += hmm.transition(h+1, h+2);
-        transition_count(from_index, to_index)++;
-      }
-      unsigned int last_hmm = hmm.NumberOfStates() - 1;
-      unsigned int from_index = cluster_index[ hmm.state(last_hmm) ];
-      modified_transition(from_index, from_index) += 
-          hmm.transition(last_hmm+1, last_hmm+1);
-      transition_count(from_index, from_index)++;
-      for(unsigned int to_index = 0; to_index < param.total_clusters; 
-          ++to_index)
-      {
-        if( to_index != from_index )
-        {
-          modified_transition(from_index, to_index) += 
-              hmm.transition(last_hmm+1, last_hmm+2);
-          transition_count(from_index, to_index)++;
-        }
-      }
-    } // End if param.modify_transition
-  } // End for triphone_pronunciation.size()
-
-  if( param.modify_transition )
-  {
-    for(unsigned int r = 0; r < modified_transition.NumRows(); ++r)
-      for(unsigned int c = 0; c < modified_transition.NumCols(); ++c)
-        modified_transition(r,c) = std::log(modified_transition(r,c) / 
-            transition_count(r,c));
-  }
-  
-  utilities::Matrix<double> pgram = pg.ComputePosteriorgram(data);
-  for(unsigned int r = 0; r < pgram.NumRows(); ++r)
-    for(unsigned c = 0; c < pgram.NumCols(); ++c)
-      pgram(r,c) = std::log(pgram(r,c));
-
-  double final_score = 0;
-  if( param.modify_transition )
-    return acousticunitdiscovery::FindViterbiPath(
-        pgram, modified_transition, param.min_frames, final_score);
-
-  return acousticunitdiscovery::FindViterbiPath(
-      pgram, transition, param.min_frames, final_score);
-}
-
-
 int main(int argc, char* argv[])
 {
   if( argc < 11)
   {
-    std::cout<<"Usage is <Word Information> <Location Directory> <HMM File>"<<
+    std::cout<<"Usage is <Word Information> <Location Directory>"<<
+        " <Full HMM File> <Monophone HMM File>"<<
         " <Cluster Index> <Data Directory>"<<
         " <File Suffix> <Max Examples> <Min Examples> <Length Variance>"<<
-        " <Self Transition Probability>"<<std::endl;
+        std::endl;
     exit(0);
   }
   PronunciationParameters param;
   param.word_information = std::string(argv[1]);
   param.locationdir = std::string(argv[2]);
   param.hmmfile = std::string(argv[3]);
-  param.cluster_file = std::string(argv[4]);
-  param.datadir = std::string(argv[5]);
-  param.suffix = std::string(argv[6]);
-  param.max_examples = utilities::ToNumber<unsigned int>(std::string(argv[7]));
-  param.min_examples = utilities::ToNumber<unsigned int>(std::string(argv[8]));
-  param.length_variance = utilities::ToNumber<double>(std::string(argv[9]));
-  param.self_transition = utilities::ToNumber<double>(std::string(argv[10]));
-  param.min_frames = 3;
-  param.max_frames_per_hmm = 30;
-  param.modify_transition = false;
-  param.pronunciation_type = 0; // 0=clustered, 1=MOG, 2=HMM !Change to Enum!
-  param.attempts_per_example = 10;
-  param.min_hmm_transition = 0.1;
-  std::default_random_engine generator; // A single RNG.
+  param.monohmmfile = std::string(argv[4]);
+  param.cluster_file = std::string(argv[5]);
+  param.datadir = std::string(argv[6]);
+  param.suffix = std::string(argv[7]);
+  param.max_examples = utilities::ToNumber<unsigned int>(std::string(argv[8]));
+  param.min_examples = utilities::ToNumber<unsigned int>(std::string(argv[9]));
+  param.length_variance = utilities::ToNumber<double>(std::string(argv[10]));
+  param.pronunciation_type = 1; // 0=clustered, 1=DataDriven !Change to Enum!
 
-  statistics::HmmSet htk;
+  statistics::HmmSet htk, monohtk;
   htk.LoadHtkHmmSet(param.hmmfile);
+  monohtk.LoadHtkHmmSet(param.monohmmfile);
+  utilities::Matrix<double> lm;
+  lm.Initialize(monohtk.HmmCount(), monohtk.HmmCount(), std::log(0.05));
+  RemoveSilenceFromLM(lm, monohtk);
   std::vector<statistics::MixtureOfDiagonalGaussians> mog = htk.states();
   // Ugly way of initializing dimension, Find a better way!!!
   param.dimension = mog[0].gaussian(0).dimension();
-  std::vector<int> cluster_index = ReadVectorFromFile(param.cluster_file);
+  std::vector<int> cluster_index = ReadTriphoneLabels(param.cluster_file, htk);
+  CorrectIndependentClusters(cluster_index, htk);
   param.total_clusters = cluster_index.size();
-  
   std::ifstream wordlist_fin;
   wordlist_fin.open(param.word_information.c_str());
-
+  
   if( !wordlist_fin.good())
   {
     std::cout<<"File "<<param.word_information<<" could not be opened.\n";
     exit(1);
   }
-
   // Loop through each word in the word information file
   while( wordlist_fin.good())
   {
@@ -422,19 +423,49 @@ int main(int argc, char* argv[])
 
       std::vector<WordLocation> locations = LoadLocationList(location_file);
       locations = PruneLocationList(locations, param.length_variance);
+      std::cout<<" "<<locations.size();
 
-      std::vector<std::string> final_pronunciation;
-      std::vector<int> index_pronunciation;
-      std::vector<std::string> triphone_pronunciation = 
+      if( param.pronunciation_type == 1 && 
+          locations.size() > param.min_examples)
+      {
+        statistics::HmmDecoder hdecode;
+        hdecode.Initialize(&monohtk, &lm);
+        std::vector<int> mono_index_pronunciation;
+        std::vector<std::string> mono_pronunciation;
+        std::vector<utilities::Matrix<double> > score_set;
+
+        for(unsigned int i = 0; 
+            (i < locations.size()) && (i < param.max_examples); ++i)
+        {
+          utilities::Matrix<double> data, scores;
+          LoadDataSegment(locations[i], param, data);
+          hdecode.FeaturesStateScores(data, scores);
+          score_set.push_back(scores);
+        }
+
+        mono_index_pronunciation = BestPathInSet(score_set, hdecode);
+        mono_pronunciation = ConvertToHmmNamePronunciation( 
+            mono_index_pronunciation, monohtk);
+      
+        for(unsigned int i = 0; i < mono_pronunciation.size(); ++i)
+          std::cout<<" "<<mono_pronunciation[i];
+        std::cout<<std::endl;
+      }
+      else
+      {
+        std::vector<std::string> final_pronunciation;
+        std::vector<int> index_pronunciation;
+        std::vector<std::string> triphone_pronunciation = 
           GenerateTriphonePronunciation(original_pronunciation);
-
-      index_pronunciation = GenerateClusteredPronunciation(
-          triphone_pronunciation, htk, cluster_index, param);
-
-      final_pronunciation = ConvertToAlphaPronunciation(index_pronunciation);
-      for(unsigned int i = 0; i < final_pronunciation.size(); ++i)
-        std::cout<<" "<<final_pronunciation[i];
-      std::cout<<std::endl;
+        
+        index_pronunciation = GenerateClusteredPronunciation(
+            triphone_pronunciation, htk, cluster_index, param);
+        
+        final_pronunciation = ConvertToAlphaPronunciation(index_pronunciation);
+        for(unsigned int i = 0; i < final_pronunciation.size(); ++i)
+          std::cout<<" "<<final_pronunciation[i];
+        std::cout<<std::endl;
+      }
     } // end info_line.length() > 0
   } // end wordlist_fin.good()
 

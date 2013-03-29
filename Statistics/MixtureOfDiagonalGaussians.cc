@@ -100,23 +100,4 @@ void MixtureOfDiagonalGaussians::NormalizeWeights()
     weight_[i] = weight_[i] / total;
 }
 
-// Selects one Gaussian from the mixture based on the weights and then samples
-// that Gaussian distribution.
-std::vector<double> MixtureOfDiagonalGaussians::Sample(
-    std::default_random_engine &generator) const
-{
-  std::uniform_real_distribution<double> distribution(0.0,1.0);
-  double point = distribution(generator);
-  double total_weight = 0;
-  for(unsigned int i = 0; i < weight_.size(); ++i)
-  {
-    total_weight += weight_.size();
-    if(point <= total_weight)
-      return gaussian_[i].Sample(generator);
-  }
-  // If we reach this point, it must be due to a normalization error with the
-  // mixture weights. We assume the final mixture should then be used.
-  return gaussian_[ weight_.size()-1 ].Sample(generator);
-}
-
 }

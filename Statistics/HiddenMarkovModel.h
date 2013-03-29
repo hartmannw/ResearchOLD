@@ -36,7 +36,7 @@ class HiddenMarkovModel
   void SetTransitions(utilities::Matrix<double> transition){
       transition_matrix_ = transition;}
 
-  std::string name(){return name_;}
+  std::string name() const {return name_;}
   unsigned int state(unsigned int state_index){return states_[state_index];}
   std::vector<unsigned int> states(){return states_;}
   unsigned int NumberOfStates() { return states_.size(); }

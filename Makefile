@@ -8,7 +8,7 @@ DEPS = $(subst .cc,.d,$(SRCS))
 
 # Standard flags and programs
 CC=g++
-CPPFLAGS=-Wall -pedantic -O2 -std=c++11
+CPPFLAGS=-Wall -pedantic -O2
 DEPFLAGS=-MD -MP -MF
 LDFLAGS=
 LDLIBS=

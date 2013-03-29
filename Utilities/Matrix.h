@@ -22,6 +22,7 @@ class Matrix
   std::vector<T> matrix_;
   unsigned int rows_, cols_;
 
+  void PrintError(unsigned int row, unsigned int col) const;
  public:
   Matrix() : rows_(0), cols_(0) {}
   Matrix(unsigned int rows, unsigned int cols) : matrix_(rows*cols), 
@@ -36,6 +37,7 @@ class Matrix
 
   T operator() (unsigned int row, unsigned int col) const;
   T& operator() (unsigned int row, unsigned int col);
+  T At (unsigned int row, unsigned int col) const;
   unsigned int NumRows() const { return rows_;}
   unsigned int NumCols() const { return cols_;}
   std::vector<T> GetRow(unsigned int row) const;
@@ -51,6 +53,7 @@ class Matrix
   bool SetDiagonal(T value);
 
   bool isSquare() const { return rows_ == cols_; }
+  bool isIndexValid( unsigned int row, unsigned int col) const;
   bool Transpose();
 };
 
@@ -116,12 +119,24 @@ bool Matrix<T>::Initialize(const std::vector<std::vector<T> > &matrix)
 template<class T>
 T Matrix<T>::operator() (unsigned int row, unsigned int col) const
 {
+  if(! isIndexValid(row,col) )
+    PrintError(row,col);
   return matrix_[ (row * cols_) + col ];
 }
 
 template<class T>
 T& Matrix<T>::operator() (unsigned int row, unsigned int col)
 {
+  if(! isIndexValid(row,col) )
+    PrintError(row,col);
+  return matrix_[ (row * cols_) + col ];
+}
+
+template<class T>
+T Matrix<T>::At(unsigned int row, unsigned int col) const
+{
+  if(! isIndexValid(row,col) )
+    PrintError(row,col);
   return matrix_[ (row * cols_) + col ];
 }
 
@@ -229,6 +244,16 @@ bool Matrix<T>::SetDiagonal(T value)
   return true;
 }
 
+template<class T>
+bool Matrix<T>::isIndexValid( unsigned int row, unsigned int col) const
+{
+  // Never have to check for indices less than 0 because the values are 
+  // unsigned.
+  if( row >= rows_ || col >= cols_ )
+    return false;
+  return true;
+}
+
 // Note that a transposition is really just a representation issue. It is 
 // possible and probably more efficient to simply set a transposition flag. Then
 // every interaction with the class flips the rows and cols. It does add extra
@@ -248,6 +273,14 @@ bool Matrix<T>::Transpose()
   std::swap(rows_, cols_);
   matrix_ = new_matrix;
   return true;
+}
+
+template<class T>
+void Matrix<T>::PrintError(unsigned int row, unsigned int col) const
+{
+  std::cout<<"Index ("<<row<<","<<col<<") invalid for Matrix size ("<<
+    rows_<<","<<cols_<<")"<<std::endl;
+  exit(1);
 }
 
 } // end namespace utilities
